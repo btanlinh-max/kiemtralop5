@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #fffbeb;
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1, h2, h3, .font-display { font-family: 'Quicksand', 'Nunito', sans-serif; }
+  button { cursor: pointer; }
+  input, textarea, select { font-size: 16px; } /* tránh iPhone tự phóng to */
+}
+
+@media print {
+  body { background: white !important; }
+  .no-print { display: none !important; }
+}
+
+@keyframes float-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-float { animation: float-slow 4s ease-in-out infinite; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #fdf6e7; }
+::-webkit-scrollbar-thumb { background: #fcd34d; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #f59e0b; }

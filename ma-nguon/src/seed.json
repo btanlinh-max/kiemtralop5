@@ -1,0 +1,616 @@
+[
+ {
+  "id": "seed_toan1",
+  "code": "TOAN01",
+  "title": "Đề ôn tập giữa học kì I – Đề số 1",
+  "subject": "Toán",
+  "grade": 5,
+  "kind": "ontap",
+  "duration": 40,
+  "passages": [],
+  "questions": [
+   {
+    "id": "seed_toan1_q1",
+    "prompt": "Giá trị của chữ số 5 trong số 27 530 846 là:",
+    "level": 1,
+    "topic": "Ôn tập số tự nhiên",
+    "explanation": "Chữ số 5 ở hàng trăm nghìn nên có giá trị 500 000.",
+    "type": "mcq",
+    "options": [
+     "500",
+     "5 000",
+     "50 000",
+     "500 000"
+    ],
+    "answer": 3,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan1_q2",
+    "prompt": "Phân số {3/4} viết thành phân số thập phân là:",
+    "level": 1,
+    "topic": "Phân số thập phân",
+    "explanation": "{3/4} = {3×25/4×25} = {75/100}.",
+    "type": "mcq",
+    "options": [
+     "{3/10}",
+     "{34/100}",
+     "{75/100}",
+     "{75/10}"
+    ],
+    "answer": 2,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan1_q3",
+    "prompt": "Số thập phân gồm mười hai đơn vị, bốn phần mười và năm phần nghìn viết là:",
+    "level": 1,
+    "topic": "Số thập phân (đọc, viết, cấu tạo)",
+    "explanation": "12 đơn vị, 4 phần mười, 0 phần trăm, 5 phần nghìn → 12,405.",
+    "type": "mcq",
+    "options": [
+     "12,45",
+     "12,405",
+     "12,045",
+     "12,4005"
+    ],
+    "answer": 1,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan1_q4",
+    "prompt": "Số lớn nhất trong các số dưới đây là:",
+    "level": 1,
+    "topic": "So sánh, làm tròn số thập phân",
+    "explanation": "So sánh phần nguyên bằng nhau (4), so sánh hàng phần mười: 6 > 5 nên 4,65 là lớn nhất.",
+    "type": "mcq",
+    "options": [
+     "4,65",
+     "4,56",
+     "4,605",
+     "4,506"
+    ],
+    "answer": 0,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan1_q5",
+    "prompt": "Góc có số đo 120° là:",
+    "level": 1,
+    "topic": "Góc và đo góc",
+    "explanation": "Góc lớn hơn góc vuông (90°) và bé hơn góc bẹt (180°) là góc tù.",
+    "type": "mcq",
+    "options": [
+     "Góc nhọn",
+     "Góc vuông",
+     "Góc tù",
+     "Góc bẹt"
+    ],
+    "answer": 2,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan1_q6",
+    "prompt": "Làm tròn số 38,264 đến hàng phần mười ta được:",
+    "level": 2,
+    "topic": "So sánh, làm tròn số thập phân",
+    "explanation": "Chữ số hàng phần trăm là 6 ≥ 5 nên làm tròn lên: 38,3.",
+    "type": "mcq",
+    "options": [
+     "38,3",
+     "38,2",
+     "38,26",
+     "38"
+    ],
+    "answer": 0,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan1_q7",
+    "prompt": "5 m 7 cm = …… m. Số thích hợp điền vào chỗ chấm là:",
+    "level": 2,
+    "topic": "Viết số đo đại lượng dưới dạng số thập phân",
+    "explanation": "7 cm = {7/100} m = 0,07 m → 5,07 m.",
+    "type": "mcq",
+    "options": [
+     "5,7",
+     "57",
+     "5,007",
+     "5,07"
+    ],
+    "answer": 3,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan1_q8",
+    "prompt": "3 ha = …… m². Số thích hợp điền vào chỗ chấm là:",
+    "level": 2,
+    "topic": "Đơn vị đo diện tích (km², ha)",
+    "explanation": "1 ha = 10 000 m² → 3 ha = 30 000 m².",
+    "type": "mcq",
+    "options": [
+     "300",
+     "3 000",
+     "30 000",
+     "300 000"
+    ],
+    "answer": 2,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan1_q9",
+    "prompt": "Tính:\na) {2/3} + {3/4} = [[0]]\nb) {5/6} − {1/4} = [[1]]\nc) {4/9} × {3/8} = [[2]]\nd) 2{1/2} : {5/4} = [[3]]",
+    "level": 1,
+    "topic": "Ôn tập phân số, hỗn số",
+    "explanation": "a) {8/12} + {9/12} = {17/12}; b) {10/12} − {3/12} = {7/12}; c) {12/72} = {1/6}; d) {5/2} × {4/5} = 2.",
+    "type": "fill",
+    "blanks": [
+     "17/12",
+     "7/12",
+     "1/6|12/72|4/24",
+     "2|10/5|20/10"
+    ],
+    "points": 1
+   },
+   {
+    "id": "seed_toan1_q10",
+    "prompt": "Viết số thập phân thích hợp vào chỗ chấm:\na) 3 kg 45 g = [[0]] kg\nb) 2 tấn 5 tạ = [[1]] tấn\nc) 750 m = [[2]] km\nd) 25 000 m² = [[3]] ha",
+    "level": 2,
+    "topic": "Viết số đo đại lượng dưới dạng số thập phân",
+    "explanation": "45 g = 0,045 kg; 5 tạ = 0,5 tấn; 750 m = 0,75 km; 10 000 m² = 1 ha nên 25 000 m² = 2,5 ha.",
+    "type": "fill",
+    "blanks": [
+     "3,045",
+     "2,5",
+     "0,75",
+     "2,5"
+    ],
+    "points": 1
+   },
+   {
+    "id": "seed_toan1_q11",
+    "prompt": "Tính bằng cách thuận tiện:\na) 125 × 37 × 8\nb) {3/5} × {7/9} + {3/5} × {2/9}",
+    "level": 2,
+    "topic": "Tính giá trị biểu thức, tính thuận tiện",
+    "explanation": "",
+    "type": "essay",
+    "points": 1,
+    "guide": "a) 125 × 37 × 8 = (125 × 8) × 37 = 1000 × 37 = 37 000 (0,5đ)\nb) {3/5} × ({7/9} + {2/9}) = {3/5} × 1 = {3/5} (0,5đ)"
+   },
+   {
+    "id": "seed_toan1_q12",
+    "prompt": "Một thửa ruộng hình chữ nhật có chiều dài 150 m, chiều rộng bằng {2/3} chiều dài. Cứ 100 m² ruộng thu hoạch được 65 kg thóc. Hỏi cả thửa ruộng thu hoạch được bao nhiêu tấn thóc?\na) (M2 – 1 điểm) Tính diện tích thửa ruộng đó bằng mét vuông, rồi đổi ra héc-ta.\nb) (M3 – 1 điểm) Cứ 100 m² ruộng thu hoạch được 65 kg thóc. Hỏi cả thửa ruộng thu hoạch được bao nhiêu tấn thóc?",
+    "level": 2,
+    "topic": "Giải toán có lời văn",
+    "explanation": "",
+    "type": "essay",
+    "points": 2,
+    "guide": "Chiều rộng: 150 × {2/3} = 100 (m). Diện tích: 150 × 100 = 15 000 (m²) = 1,5 ha (1đ)\nSố thóc: 15 000 : 100 × 65 = 9 750 (kg) = 9,75 tấn (1đ)\nĐáp số: a) 15 000 m², 1,5 ha; b) 9,75 tấn"
+   },
+   {
+    "id": "seed_toan1_q13",
+    "prompt": "Tính giá trị biểu thức:\n{1/2} + {1/4} + {1/8} + {1/16}",
+    "level": 3,
+    "topic": "Tính giá trị biểu thức, tính thuận tiện",
+    "explanation": "",
+    "type": "essay",
+    "points": 1,
+    "guide": "= {8/16} + {4/16} + {2/16} + {1/16} = {15/16} (hoặc 1 − {1/16} = {15/16})"
+   }
+  ],
+  "author": "Cô giáo Phạm Hồng Hạnh",
+  "authorEmail": "phhanh90@gmail.com",
+  "createdAt": "2026-10-20T08:00:00.000Z",
+  "updatedAt": "2026-10-20T08:00:00.000Z",
+  "open": true,
+  "shuffle": false,
+  "showAnswers": true,
+  "classes": []
+ },
+ {
+  "id": "seed_toan2",
+  "code": "TOAN02",
+  "title": "Đề ôn tập giữa học kì I – Đề số 2",
+  "subject": "Toán",
+  "grade": 5,
+  "kind": "ontap",
+  "duration": 40,
+  "passages": [],
+  "questions": [
+   {
+    "id": "seed_toan2_q1",
+    "prompt": "Số “Hai mươi lăm triệu không trăm linh tám nghìn ba trăm” viết là:",
+    "level": 1,
+    "topic": "Ôn tập số tự nhiên",
+    "explanation": "",
+    "type": "mcq",
+    "options": [
+     "25 080 300",
+     "25 008 300",
+     "25 800 300",
+     "2 508 300"
+    ],
+    "answer": 1,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan2_q2",
+    "prompt": "Hỗn số 3{2/5} viết thành phân số là:",
+    "level": 1,
+    "topic": "Ôn tập phân số, hỗn số",
+    "explanation": "",
+    "type": "mcq",
+    "options": [
+     "{32/5}",
+     "{13/5}",
+     "{11/5}",
+     "{17/5}"
+    ],
+    "answer": 3,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan2_q3",
+    "prompt": "Chữ số 7 trong số thập phân 45,378 thuộc hàng nào?",
+    "level": 1,
+    "topic": "Tỉ số và tỉ số phần trăm",
+    "explanation": "",
+    "type": "mcq",
+    "options": [
+     "Hàng phần mười",
+     "Hàng phần trăm",
+     "Hàng phần nghìn",
+     "Hàng đơn vị"
+    ],
+    "answer": 1,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan2_q4",
+    "prompt": "Dãy số nào được xếp theo thứ tự từ bé đến lớn?",
+    "level": 1,
+    "topic": "So sánh, làm tròn số thập phân",
+    "explanation": "",
+    "type": "mcq",
+    "options": [
+     "0,9; 0,85; 1,02; 1,2",
+     "1,2; 1,02; 0,9; 0,85",
+     "0,85; 0,9; 1,02; 1,2",
+     "0,85; 0,9; 1,2; 1,02"
+    ],
+    "answer": 2,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan2_q5",
+    "prompt": "Hai đường thẳng vuông góc với nhau tạo thành mấy góc vuông?",
+    "level": 1,
+    "topic": "Góc và đo góc",
+    "explanation": "",
+    "type": "mcq",
+    "options": [
+     "1 góc",
+     "2 góc",
+     "3 góc",
+     "4 góc"
+    ],
+    "answer": 3,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan2_q6",
+    "prompt": "Làm tròn số 12,648 đến hàng phần trăm ta được:",
+    "level": 2,
+    "topic": "Tỉ số và tỉ số phần trăm",
+    "explanation": "",
+    "type": "mcq",
+    "options": [
+     "12,65",
+     "12,64",
+     "12,6",
+     "12,7"
+    ],
+    "answer": 0,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan2_q7",
+    "prompt": "2 kg 50 g = …… kg. Số thích hợp điền vào chỗ chấm là:",
+    "level": 2,
+    "topic": "Viết số đo đại lượng dưới dạng số thập phân",
+    "explanation": "",
+    "type": "mcq",
+    "options": [
+     "2,5",
+     "2,005",
+     "2,05",
+     "250"
+    ],
+    "answer": 2,
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan2_q8",
+    "prompt": "Đúng ghi Đ, sai ghi S vào ô trống:",
+    "level": 2,
+    "topic": "Đơn vị đo diện tích (km², ha)",
+    "explanation": "1 km² = 100 ha; 1 ha = 10 000 m² nên 3 ha = 30 000 m²; 1 m² = 100 dm²; 4 500 m² = 0,45 ha.",
+    "type": "tf",
+    "statements": [
+     "5 km² = 500 ha",
+     "3 ha = 300 m²",
+     "2 m² = 200 dm²",
+     "4 500 m² = 4,5 ha"
+    ],
+    "tfAnswers": [
+     true,
+     false,
+     true,
+     false
+    ],
+    "points": 0.5
+   },
+   {
+    "id": "seed_toan2_q9",
+    "prompt": "Tính:\na) {3/8} + {5/12} = [[0]]\nb) {7/10} − {2/5} = [[1]]\nc) 1{1/3} × {3/8} = [[2]]\nd) {9/10} : {3/5} = [[3]]",
+    "level": 1,
+    "topic": "Ôn tập phân số, hỗn số",
+    "explanation": "a) {9/24} + {10/24} = {19/24}; b) {7/10} − {4/10} = {3/10}; c) {4/3} × {3/8} = {1/2}; d) {9/10} × {5/3} = {3/2}.",
+    "type": "fill",
+    "blanks": [
+     "19/24",
+     "3/10",
+     "1/2|12/24|4/8",
+     "3/2|45/30|1 1/2|1,5"
+    ],
+    "points": 1
+   },
+   {
+    "id": "seed_toan2_q10",
+    "prompt": "Viết số thập phân thích hợp vào chỗ chấm:\na) 6 m 5 dm = [[0]] m\nb) 1 tấn 250 kg = [[1]] tấn\nc) 405 cm = [[2]] m\nd) 3 m² 7 dm² = [[3]] m²",
+    "level": 2,
+    "topic": "Viết số đo đại lượng dưới dạng số thập phân",
+    "explanation": "5 dm = 0,5 m; 250 kg = 0,25 tấn; 405 cm = 4,05 m; 7 dm² = 0,07 m².",
+    "type": "fill",
+    "blanks": [
+     "6,5",
+     "1,25",
+     "4,05",
+     "3,07"
+    ],
+    "points": 1
+   },
+   {
+    "id": "seed_toan2_q11",
+    "prompt": "Tính giá trị biểu thức:\na) 36 000 : 48 + 125 × 16\nb) {4/5} − {1/2} × {2/3}",
+    "level": 2,
+    "topic": "Tính giá trị biểu thức, tính thuận tiện",
+    "explanation": "",
+    "type": "essay",
+    "points": 1,
+    "guide": "a) 36 000 : 48 + 125 × 16 = 750 + 2 000 = 2 750 (0,5đ)\nb) {4/5} − {1/3} = {12/15} − {5/15} = {7/15} (0,5đ)"
+   },
+   {
+    "id": "seed_toan2_q12",
+    "prompt": "Một mảnh đất hình vuông có cạnh 40 m. Người ta dành {3/8} diện tích mảnh đất để làm vườn hoa, phần còn lại trồng rau.\na) (M2 – 1 điểm) Tính diện tích phần đất trồng rau.\nb) (M3 – 1 điểm) Cứ 10 m² đất trồng rau thu hoạch được 25 kg rau. Hỏi trên mảnh đất đó thu hoạch được bao nhiêu tạ rau?",
+    "level": 2,
+    "topic": "Giải toán có lời văn",
+    "explanation": "",
+    "type": "essay",
+    "points": 2,
+    "guide": "Diện tích mảnh đất: 40 × 40 = 1 600 (m²); vườn hoa: 1 600 × {3/8} = 600 (m²); trồng rau: 1 600 − 600 = 1 000 (m²) (1đ)\nSố rau: 1 000 : 10 × 25 = 2 500 (kg) = 25 tạ (1đ)"
+   },
+   {
+    "id": "seed_toan2_q13",
+    "prompt": "Tìm số tự nhiên x, biết:\na) 2,98 < x < 3,15\nb) 5,7 < x < 7,02",
+    "level": 3,
+    "topic": "Số thập phân (đọc, viết, cấu tạo)",
+    "explanation": "",
+    "type": "essay",
+    "points": 1,
+    "guide": "a) x = 3 (0,5đ)  b) x = 6; 7 (0,5đ)"
+   }
+  ],
+  "author": "Cô giáo Phạm Hồng Hạnh",
+  "authorEmail": "phhanh90@gmail.com",
+  "createdAt": "2026-10-21T08:00:00.000Z",
+  "updatedAt": "2026-10-21T08:00:00.000Z",
+  "open": true,
+  "shuffle": false,
+  "showAnswers": true,
+  "classes": []
+ },
+ {
+  "id": "seed_tv1",
+  "code": "TVIET1",
+  "title": "Đề kiểm tra giữa học kì I - môn Tiếng Việt lớp 5 – Đề số 1",
+  "subject": "Tiếng Việt",
+  "grade": 5,
+  "kind": "kiemtra",
+  "duration": 60,
+  "passages": [
+   {
+    "id": "seed_tv1_p1",
+    "title": "NGƯỜI ĂN XIN",
+    "content": "Tôi đang đi trên phố thì một người ăn xin già nua bước đến trước mặt.\nĐôi mắt ông đỏ hoe, giàn giụa nước mắt. Đôi môi tái nhợt, quần áo rách rưới. Ông chìa về phía tôi một bàn tay gầy guộc, run rẩy.\nÔng đang xin tôi giúp đỡ.\nTôi lục hết túi áo rồi đến túi quần. Không tiền. Không đồng hồ. Cũng chẳng có một chiếc khăn tay. Tôi chẳng có gì có thể cho ông cả.\nNgười ăn xin vẫn đứng đó, bàn tay chìa ra, khẽ run lên.\nTôi bỗng thấy ngượng ngùng và bối rối. Tôi nắm lấy bàn tay lạnh ngắt của ông:\n– Ông đừng giận cháu. Cháu không có gì để cho ông cả.\nNgười ăn xin nhìn tôi chăm chú. Đôi môi nhợt nhạt của ông thoáng nở một nụ cười. Ông cũng siết lấy bàn tay tôi:\n– Cháu ơi, cảm ơn cháu! Như vậy là cháu đã cho lão rồi.\nTôi sững người.\nTôi hiểu rằng lúc ấy, tôi đã trao cho ông không phải tiền bạc hay một món quà nào, mà là sự cảm thông và lòng tôn trọng. Và dường như chính tôi cũng vừa nhận được từ ông một điều quý giá.\nTôi bước tiếp trên con phố đông người. Trong lòng tôi bỗng thấy ấm áp hơn.",
+    "source": "Lược trích, chuyển ngữ theo truyện ngắn Người ăn xin - I. S. Tuốc-ghê-nhép"
+   }
+  ],
+  "questions": [
+   {
+    "id": "seed_tv1_q1",
+    "prompt": "Những chi tiết nào cho thấy người ăn xin có hoàn cảnh đáng thương?",
+    "level": 1,
+    "topic": "Đọc hiểu – nội dung, chi tiết",
+    "passageId": "seed_tv1_p1",
+    "explanation": "",
+    "type": "mcq",
+    "options": [
+     "Đôi mắt đỏ hoe, môi tái nhợt, quần áo rách rưới, bàn tay gầy guộc.",
+     "Ông đứng giữa phố đông người và nhìn mọi người.",
+     "Ông nói chuyện nhỏ nhẹ với nhân vật “tôi”.",
+     "Ông mỉm cười rồi nắm tay nhân vật “tôi”."
+    ],
+    "answer": 0,
+    "points": 0.5
+   },
+   {
+    "id": "seed_tv1_q2",
+    "prompt": "Vì sao nhân vật “tôi” không thể cho người ăn xin một món đồ hay tiền bạc?",
+    "level": 1,
+    "topic": "Đọc hiểu – ý nghĩa, bài học",
+    "passageId": "seed_tv1_p1",
+    "explanation": "",
+    "type": "mcq",
+    "options": [
+     "Vì nhân vật “tôi” không muốn giúp ông.",
+     "Vì nhân vật “tôi” không mang theo thứ gì có thể cho ông.",
+     "Vì người ăn xin không muốn nhận tiền.",
+     "Vì nhân vật “tôi” đang vội đi công việc."
+    ],
+    "answer": 1,
+    "points": 0.5
+   },
+   {
+    "id": "seed_tv1_q3",
+    "prompt": "Khi không có gì để cho người ăn xin, nhân vật “tôi” đã làm gì?",
+    "level": 2,
+    "topic": "Đọc hiểu – nội dung, chi tiết",
+    "passageId": "seed_tv1_p1",
+    "explanation": "",
+    "type": "mcq",
+    "options": [
+     "Lặng lẽ bỏ đi.",
+     "Xin người khác giúp ông.",
+     "Nắm lấy tay ông và chân thành xin lỗi.",
+     "Hứa lần sau sẽ mang tiền cho ông."
+    ],
+    "answer": 2,
+    "points": 0.5
+   },
+   {
+    "id": "seed_tv1_q4",
+    "prompt": "Theo em, vì sao một cái nắm tay của nhân vật “tôi” lại khiến người ăn xin nói: “Như vậy là cháu đã cho lão rồi.”?",
+    "level": 2,
+    "topic": "Đọc hiểu – ý nghĩa, bài học",
+    "passageId": "seed_tv1_p1",
+    "explanation": "",
+    "type": "essay",
+    "points": 1,
+    "guide": "Vì cái nắm tay thể hiện sự cảm thông, tôn trọng và chân thành của nhân vật \"tôi\"; người ăn xin nhận được tình người, điều quý hơn tiền bạc."
+   },
+   {
+    "id": "seed_tv1_q5",
+    "prompt": "Nội dung chính của câu chuyện là gì?",
+    "level": 2,
+    "topic": "Đọc hiểu – ý nghĩa, bài học",
+    "passageId": "seed_tv1_p1",
+    "explanation": "",
+    "type": "mcq",
+    "options": [
+     "Khuyên mọi người luôn mang theo tiền khi ra đường.",
+     "Kể về cuộc sống vất vả của những người nghèo.",
+     "Ca ngợi sự cảm thông, lòng nhân ái và cách con người biết tôn trọng nhau.",
+     "Nhắc mọi người không nên đi một mình trên phố."
+    ],
+    "answer": 2,
+    "points": 0.5
+   },
+   {
+    "id": "seed_tv1_q6",
+    "prompt": "Cuối câu chuyện, nhân vật “tôi” nghĩ rằng mình “cũng vừa nhận được từ ông một điều quý giá”. Theo em, “điều quý giá” ấy là gì? Hãy giải thích.",
+    "level": 3,
+    "topic": "Đọc hiểu – ý nghĩa, bài học",
+    "passageId": "seed_tv1_p1",
+    "explanation": "",
+    "type": "essay",
+    "points": 1,
+    "guide": "\"Điều quý giá\" là bài học về lòng nhân ái, sự cảm thông; là niềm vui, sự ấm áp khi biết chia sẻ và được người khác thấu hiểu. (Giải thích hợp lí: 1đ)"
+   },
+   {
+    "id": "seed_tv1_q7",
+    "prompt": "Đại từ xưng hô trong câu “Ông đừng giận cháu. Cháu không có gì để cho ông cả.” là từ nào?",
+    "level": 1,
+    "topic": "Đại từ",
+    "passageId": "seed_tv1_p1",
+    "explanation": "\"Cháu\" là đại từ xưng hô nhân vật \"tôi\" dùng để tự xưng khi nói với ông.",
+    "type": "mcq",
+    "options": [
+     "giận",
+     "gì",
+     "cháu",
+     "cho"
+    ],
+    "answer": 2,
+    "points": 0.5
+   },
+   {
+    "id": "seed_tv1_q8",
+    "prompt": "Từ nào dưới đây gần nghĩa nhất với từ “cảm thông” trong bài?",
+    "level": 1,
+    "topic": "Đọc hiểu – nội dung, chi tiết",
+    "passageId": "seed_tv1_p1",
+    "explanation": "\"Cảm thông\" là hiểu và chia sẻ với hoàn cảnh của người khác – gần nghĩa nhất với \"thấu hiểu\".",
+    "type": "mcq",
+    "options": [
+     "thấu hiểu",
+     "tò mò",
+     "lo lắng",
+     "ngạc nhiên"
+    ],
+    "answer": 0,
+    "points": 0.5
+   },
+   {
+    "id": "seed_tv1_q9",
+    "prompt": "Từ “tay” trong câu “Tôi nắm lấy bàn tay lạnh ngắt của ông.” được dùng theo nghĩa nào? Hãy đặt một câu khác trong đó từ “tay” được dùng với một nghĩa khác.",
+    "level": 2,
+    "topic": "Đọc hiểu – nội dung, chi tiết",
+    "passageId": "seed_tv1_p1",
+    "explanation": "",
+    "type": "essay",
+    "points": 1,
+    "guide": "\"tay\" trong câu dùng theo nghĩa gốc (bộ phận cơ thể người). Đặt câu nghĩa chuyển, VD: \"Anh ấy là một tay bóng bàn cừ khôi.\" / \"Tay ghế bị gãy rồi.\" (mỗi ý 0,5đ)"
+   },
+   {
+    "id": "seed_tv1_q10",
+    "prompt": "Xác định trạng ngữ, chủ ngữ, vị ngữ trong câu: “Trên con phố đông người, người ăn xin già nua vẫn đứng lặng trước mặt tôi.”",
+    "level": 2,
+    "topic": "Trạng ngữ, chủ ngữ, vị ngữ",
+    "passageId": "seed_tv1_p1",
+    "explanation": "",
+    "type": "essay",
+    "points": 1,
+    "guide": "Trạng ngữ: Trên con phố đông người / Chủ ngữ: người ăn xin già nua / Vị ngữ: vẫn đứng lặng trước mặt tôi."
+   },
+   {
+    "id": "seed_tv1_q11",
+    "prompt": "Từ câu chuyện trên, em rút ra bài học gì về cách đối xử với những người có hoàn cảnh khó khăn? Hãy viết 3 - 4 câu, trong đó có sử dụng một đại từ và gạch chân dưới đại từ đó.",
+    "level": 3,
+    "topic": "Đại từ",
+    "passageId": "seed_tv1_p1",
+    "explanation": "",
+    "type": "essay",
+    "points": 1,
+    "guide": "Nêu được bài học: cảm thông, tôn trọng, sẵn sàng giúp đỡ người có hoàn cảnh khó khăn (0,5đ); viết 3–4 câu có dùng 1 đại từ và gạch chân đúng (0,5đ)."
+   },
+   {
+    "id": "seed_tv1_q12",
+    "type": "essay",
+    "prompt": "Thế giới truyện kể thật kì diệu! Ở đó, một chú Rùa chậm chạp có thể chiến thắng Thỏ nhanh nhẹn, một chú Dế nhỏ bé có thể dũng cảm bảo vệ người yếu thế, hay những đồ vật tưởng như vô tri cũng có thể biết nói, biết suy nghĩ và mang đến cho chúng ta những bài học đáng nhớ.\nEm hãy kể lại một câu chuyện đã nghe hoặc đã đọc có nhân vật là con vật hoặc đồ vật mà em yêu thích. Bằng trí tưởng tượng của mình, hãy kể câu chuyện thật sinh động, hấp dẫn và để lại cho người đọc một cảm xúc, một suy nghĩ hoặc một bài học đẹp về cuộc sống.",
+    "points": 10,
+    "level": 3,
+    "topic": "Viết – kể chuyện sáng tạo",
+    "guide": "Bài văn kể chuyện sáng tạo (10đ): Mở bài giới thiệu câu chuyện, nhân vật (1đ); Thân bài kể đủ diễn biến, có chi tiết sáng tạo, lời kể sinh động, có lời thoại/suy nghĩ nhân vật (6đ); Kết bài nêu kết thúc và bài học/cảm xúc (1đ); Chữ viết, chính tả, dùng từ, đặt câu (1đ); Sáng tạo (1đ)."
+   }
+  ],
+  "author": "Cô giáo Phạm Hồng Hạnh",
+  "authorEmail": "phhanh90@gmail.com",
+  "createdAt": "2026-10-22T08:00:00.000Z",
+  "updatedAt": "2026-10-22T08:00:00.000Z",
+  "open": true,
+  "shuffle": false,
+  "showAnswers": true,
+  "classes": []
+ }
+]

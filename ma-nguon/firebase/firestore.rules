@@ -1,0 +1,59 @@
+rules_version = '2';
+// Quy tắc bảo mật – Hệ thống đề kiểm tra & ôn tập lớp 5
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owns() { return signedIn() && resource.data.ownerUid == request.auth.uid; }
+    function willOwn() { return signedIn() && request.resource.data.ownerUid == request.auth.uid; }
+    function small() { return request.resource.size() < 900000; }
+
+    // Hồ sơ giáo viên: chỉ chính chủ
+    match /teachers/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Đề: ai cũng đọc được (học sinh cần đọc để làm bài); chỉ người soạn được sửa/xoá
+    match /exams/{examId} {
+      allow read: if true;
+      allow create: if willOwn() && small();
+      allow update: if owns() && willOwn() && small();
+      allow delete: if owns();
+    }
+
+    // Lớp: id = mã lớp. Học sinh đọc 1 lớp khi biết mã; chỉ giáo viên chủ lớp liệt kê / sửa
+    match /classes/{code} {
+      function classOwner() {
+        return signedIn() && get(/databases/$(database)/documents/classes/$(code)).data.ownerUid == request.auth.uid;
+      }
+      allow get: if true;
+      allow list: if owns();
+      allow create: if willOwn() && small();
+      allow update: if owns() && willOwn() && small();
+      allow delete: if owns();
+
+      // Bài làm: học sinh trong lớp (biết mã lớp) nộp được; giáo viên chủ lớp sửa/xoá (chấm tự luận)
+      match /subs/{subId} {
+        allow read: if true;
+        allow create: if exists(/databases/$(database)/documents/classes/$(code))
+                      && request.resource.data.classCode == code && small();
+        allow update, delete: if classOwner();
+      }
+
+      // Bài ôn riêng: giáo viên tạo; học sinh chỉ cập nhật tiến độ luyện tập
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create, delete: if classOwner();
+        allow update: if classOwner()
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attempts', 'best', 'mastered']);
+      }
+    }
+
+    // Tài liệu: giáo viên đã đăng nhập xem tài liệu công khai hoặc của mình
+    match /resources/{id} {
+      allow read: if signedIn() && (resource.data.public == true || resource.data.ownerUid == request.auth.uid);
+      allow create: if willOwn() && small();
+      allow update: if owns() && willOwn() && small();
+      allow delete: if owns();
+    }
+  }
+}
