@@ -4,7 +4,7 @@ import type { Exam, QResult, Question, Submission } from '../types';
 import { useStore } from '../store';
 import { classSubs, deleteSub, saveSub as apiSaveSub, saveReview } from '../api';
 import { friendly } from '../store';
-import { Bar, Btn, Card, Empty, Field, inputCls, Modal, Pill, toast } from './ui';
+import { Bar, Btn, Card, Empty, Field, inputCls, Modal, Pill, toast, copyText } from './ui';
 import { fmtDate, fmtDur, GAP_THRESHOLD, pct, rank, summarize, topicStats } from '../grading';
 import { subsToExcel } from '../exporters';
 import { QuestionView } from './QuestionView';
@@ -12,6 +12,10 @@ import { askJson, hasKey } from '../ai';
 import { Rich, plain } from './Rich';
 import { aiReview, autoReview, examMap, newReview, wrongQuestions } from '../reviewGen';
 import { subjectInfo } from '../curriculum';
+import { remedialToWord } from '../exporters';
+import { bankPractice } from '../reviewGen';
+import { saveExam as apiSaveExam } from '../api';
+import { useStore as useStore2 } from '../store';
 
 export async function aiGradeEssay(q: Question, ans: any, passage?: string): Promise<{ points: number; comment: string }> {
   const text = typeof ans === 'object' ? ans?.text || '' : String(ans || '');
@@ -48,6 +52,12 @@ export function Results({ examId, setExamId }: { examId: string; setExamId: (id:
     try { setSubs((await Promise.all(codes.map((c) => classSubs(c, { examId })))).flat().sort((a, b) => a.className.localeCompare(b.className) || a.studentName.split(' ').slice(-1)[0].localeCompare(b.studentName.split(' ').slice(-1)[0], 'vi'))); } catch (e: any) { toast(friendly(e), 'err'); } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [examId, classes.length]);
+  const [live, setLive] = useState(false);
+  useEffect(() => {
+    if (!live) return;
+    const t = setInterval(load, 15000);
+    return () => clearInterval(t);
+  }, [live, examId]);
 
   // mỗi học sinh lấy bài làm mới nhất
   const latest = useMemo(() => {
@@ -84,6 +94,10 @@ export function Results({ examId, setExamId }: { examId: string; setExamId: (id:
   const avg = latest.length ? Math.round((latest.reduce((s, x) => s + x.score, 0) / latest.length) * 10) / 10 : 0;
   const dist = { tot: latest.filter((x) => x.score >= 9).length, ht: latest.filter((x) => x.score >= 5 && x.score < 9).length, cht: latest.filter((x) => x.score < 5).length };
   const pendingSubs = latest.filter((x) => x.pending);
+  const doneNames = new Set(latest.map((x) => x.classCode + '¦' + x.studentName.toLowerCase()));
+  const missing = classes.filter((c) => (exam.classes || []).includes(c.id) && (!cls || c.id === cls)).flatMap((c) => c.students
+    .filter((n) => !(exam.targets || []).some((t) => t.startsWith(c.id + '|')) || (exam.targets || []).includes(c.id + '|' + n))
+    .filter((n) => !doneNames.has(c.id + '¦' + n.toLowerCase())).map((n) => (exam.classes!.length > 1 ? `${n} (${c.name})` : n)));
   const classTopics = topicStats(latest, byId);
 
   const makeReviews = async (useAi: boolean) => {
@@ -152,6 +166,7 @@ export function Results({ examId, setExamId }: { examId: string; setExamId: (id:
             </select>
           </Field>
           <Btn variant="ghost" onClick={load} loading={loading}><RefreshCw className="w-4 h-4" /> Tải lại</Btn>
+          <label className="flex items-center gap-1.5 text-sm font-bold rounded-xl border-2 border-slate-200 px-3 py-2"><input type="checkbox" className="w-4 h-4 accent-rose-500" checked={live} onChange={(e) => setLive(e.target.checked)} /> {live ? <span className="text-rose-600">● Đang theo dõi trực tiếp</span> : 'Theo dõi trực tiếp'}</label>
           <Btn variant="ghost" onClick={() => subsToExcel(exam, latest, 'Ket-qua-' + exam.title + (cls ? '-' + cls : ''))} disabled={!latest.length}><FileSpreadsheet className="w-4 h-4" /> Excel</Btn>
         </div>
       </Card>
@@ -168,6 +183,13 @@ export function Results({ examId, setExamId }: { examId: string; setExamId: (id:
         ))}
       </div>
       {pendingSubs.length > 0 && <div className="text-xs font-bold text-sky-700 px-1">⏳ {pendingSubs.length} bài còn câu tự luận chưa chấm – điểm đang tạm tính. Vào "Chấm tự luận" để hoàn tất.</div>}
+
+      {missing.length > 0 && (
+        <Card className="p-3 border-amber-200 bg-amber-50">
+          <div className="text-sm"><b className="text-amber-800">⏳ Chưa nộp ({missing.length}){exam.deadline ? ` – hạn ${new Date(exam.deadline).toLocaleDateString('vi-VN')}` : ''}:</b> {missing.join(', ')}</div>
+          <Btn small variant="ghost" className="mt-2" onClick={() => copyText(`Nhắc các con chưa làm bài "${exam.title}": ${missing.join(', ')}. Các con vào web làm bài${exam.deadline ? ' trước ' + new Date(exam.deadline).toLocaleDateString('vi-VN') : ''} nhé!`, 'Đã chép tin nhắc')}>Chép tin nhắc gửi Zalo</Btn>
+        </Card>
+      )}
 
       <div className="flex gap-1.5 overflow-x-auto">
         {([['table', 'Bảng điểm', <Users className="w-4 h-4" />], ['gaps', 'Bản đồ hổng kiến thức', <Target className="w-4 h-4" />], ['items', 'Phân tích từng câu', <ListChecks className="w-4 h-4" />], ['essay', `Chấm tự luận (${pendingSubs.length})`, <PenLine className="w-4 h-4" />]] as const).map(([k, l, ic]) => (
@@ -207,6 +229,13 @@ export function Results({ examId, setExamId }: { examId: string; setExamId: (id:
 
           {tab === 'gaps' && (
             <div className="space-y-3">
+              {classTopics.some((t) => pct(t) < 60) && (
+                <Card className="p-4 border-rose-200 bg-rose-50">
+                  <div className="font-black text-rose-800 mb-1">🚨 Dạng bài cả lớp sai trên 40% – nên dạy lại / đưa vào tiết ôn tập</div>
+                  {classTopics.filter((t) => pct(t) < 60).map((t) => <div key={t.topic} className="text-sm py-0.5">• <b>{t.topic}</b>: chỉ đúng {pct(t)}%</div>)}
+                </Card>
+              )}
+              <GroupPanel latest={latest} exam={exam} />
               <Card className="p-4">
                 <div className="font-black text-emerald-800 mb-2">🎯 Cả lớp nắm từng phần thế nào?</div>
                 <div className="space-y-2.5">
@@ -391,5 +420,65 @@ export function SubmissionDetail({ sub, exam, onClose, onSave, onDelete }: { sub
         })}
       </div>
     </Modal>
+  );
+}
+
+// Chia 3 nhóm năng lực theo kết quả đề này + giao đề riêng cho từng nhóm + xuất phiếu bù hổng
+function GroupPanel({ latest, exam }: { latest: Submission[]; exam: Exam }) {
+  const { exams, setExams, classes } = useStore2();
+  const groups = [
+    { key: 'g1', label: 'Nhóm cần hỗ trợ cơ bản', cls: 'border-rose-200 bg-rose-50', list: latest.filter((s) => s.score < 5) },
+    { key: 'g2', label: 'Nhóm rèn luyện vận dụng', cls: 'border-amber-200 bg-amber-50', list: latest.filter((s) => s.score >= 5 && s.score < 8) },
+    { key: 'g3', label: 'Nhóm thử thách nâng cao', cls: 'border-emerald-200 bg-emerald-50', list: latest.filter((s) => s.score >= 8) },
+  ];
+  const [pick, setPick] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState('');
+  const assign = async (g: (typeof groups)[number]) => {
+    const ex = exams.find((e) => e.id === pick[g.key]);
+    if (!ex || !g.list.length) return;
+    setBusy(g.key);
+    try {
+      const codes = [...new Set(g.list.map((s) => s.classCode))];
+      const targets = g.list.map((s) => s.classCode + '|' + s.studentName);
+      const n = { ...ex, classes: [...new Set([...(ex.classes || []), ...codes])], targets: [...new Set([...(ex.targets || []), ...targets])], group: g.label, open: true, updatedAt: new Date().toISOString() };
+      await apiSaveExam(n);
+      setExams((xs) => xs.map((x) => (x.id === n.id ? n : x)));
+      toast(`Đã giao "${ex.title}" cho ${g.list.length} em ${g.label.toLowerCase()}. Chỉ các em này thấy đề.`);
+    } catch (e: any) { toast(friendly(e), 'err'); } finally { setBusy(''); }
+  };
+  const exportWord = () => {
+    const byId = { [exam.id]: exam };
+    const items = latest.map((s) => {
+      const gaps = topicStats([s], byId).filter((t) => pct(t) < GAP_THRESHOLD);
+      return {
+        name: s.studentName, className: s.className,
+        parts: gaps.map((t) => ({ topic: t.topic, questions: [...wrongQuestions(t, byId).map((w) => w.q).filter((q) => q.type !== 'essay' && !q.passageId), ...bankPractice(exams, t.subject, t.topic, t.wrongQids, 4)].slice(0, 6) })).filter((p) => p.questions.length),
+      };
+    }).filter((x) => x.parts.length);
+    if (!items.length) return toast('Không có học sinh nào cần phiếu bù.', 'info');
+    remedialToWord(exam.title, classes[0]?.school || '', items);
+    toast(`Đã xuất ${items.length} phiếu (mỗi em 1 trang).`);
+  };
+  return (
+    <Card className="p-4">
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <div className="font-black text-slate-800 flex-1">👥 Chia nhóm ôn tập tự động</div>
+        <Btn small variant="ghost" onClick={exportWord}>🖨️ Xuất phiếu bù hổng kiến thức (Word)</Btn>
+      </div>
+      <div className="grid gap-2 md:grid-cols-3">
+        {groups.map((g) => (
+          <div key={g.key} className={`rounded-2xl border-2 p-3 ${g.cls}`}>
+            <div className="font-black text-sm">{g.label} ({g.list.length})</div>
+            <div className="text-xs text-slate-600 mt-1 min-h-[2.5em]">{g.list.map((s) => s.studentName.split(' ').slice(-2).join(' ')).join(', ') || '—'}</div>
+            <select className={inputCls + ' mt-2 !py-2 text-sm'} value={pick[g.key] || ''} onChange={(e) => setPick({ ...pick, [g.key]: e.target.value })}>
+              <option value="">— Chọn đề ôn cho nhóm —</option>
+              {exams.filter((e) => e.id !== exam.id).map((e) => <option key={e.id} value={e.id}>{subjectInfo(e.subject).icon} {e.title}</option>)}
+            </select>
+            <Btn small className="mt-2 w-full" disabled={!pick[g.key] || !g.list.length} loading={busy === g.key} onClick={() => assign(g)}>Giao cho nhóm</Btn>
+          </div>
+        ))}
+      </div>
+      <div className="text-[11px] text-slate-500 mt-2">Chia theo điểm đề này: dưới 5 – từ 5 đến dưới 8 – từ 8 trở lên. Đề giao theo nhóm chỉ hiện với các em trong nhóm.</div>
+    </Card>
   );
 }

@@ -111,6 +111,34 @@ Câu hỏi: ${JSON.stringify(payload)}`);
     }
   };
 
+  // Tạo sẵn thẻ ghi nhớ + 2 câu tương tự cho mỗi câu (chạy 1 lần bằng mã AI của giáo viên)
+  const aiRescue = async () => {
+    const targets = e.questions.filter((q) => q.type !== 'essay' && !q.rescue && !missingAnswer(q));
+    if (!targets.length) return toast(e.questions.some(missingAnswer) ? 'Hãy điền đáp án cho các câu trước.' : 'Các câu đã có "Giải cứu kiến thức".', 'info');
+    setAiBusy('rescue');
+    try {
+      let done = 0;
+      for (let i = 0; i < targets.length; i += 6) {
+        const b = targets.slice(i, i + 6);
+        const payload = b.map((q) => ({ id: q.id, type: q.type, topic: q.topic, prompt: q.type === 'fill' ? toAuthor(q) : q.prompt, options: q.options, answer: q.answer, statements: q.statements, tfAnswers: q.tfAnswers, accepted: q.accepted }));
+        const r = await askJson<any[]>(`Môn ${e.subject} lớp 5. Với mỗi câu hỏi dưới đây (học sinh vừa làm SAI), hãy tạo "Giải cứu kiến thức":
+- "card": thẻ ghi nhớ ngắn đúng 3 dòng (mỗi dòng bắt đầu "• "): quy tắc/kiến thức trọng tâm + lỗi hay gặp + mẹo nhớ. Phân số viết {a/b}.
+- "similar": 2 câu hỏi TƯƠNG TỰ cùng dạng, cùng mức độ nhưng ĐỔI số liệu/ngữ cảnh, có đáp án và "explanation". Chỉ dùng dạng mcq, tf, fill, short.
+${QUESTION_SCHEMA}
+Trả về mảng JSON [{"id": "...", "card": "...", "similar": [...]}].
+Câu hỏi: ${JSON.stringify(payload)}`);
+        for (const a of r || []) {
+          const q = b.find((x) => x.id === a.id);
+          if (!q || !a.card) continue;
+          updQ(q.id, { rescue: { card: String(a.card), similar: cleanQuestions(a.similar || [], q.topic).filter((x) => x.type !== 'essay').slice(0, 2) } });
+          done++;
+        }
+        setAiBusy('rescue');
+      }
+      toast(`Đã tạo "Giải cứu kiến thức" cho ${done} câu. Nhớ bấm Lưu đề!`);
+    } catch (err: any) { toast(err.message, 'err'); } finally { setAiBusy(''); }
+  };
+
   const save = async () => {
     if (!e.title.trim()) return toast('Đặt tên đề trước khi lưu.', 'err');
     if (!e.questions.length) return toast('Đề chưa có câu hỏi nào.', 'err');
@@ -145,6 +173,7 @@ Câu hỏi: ${JSON.stringify(payload)}`);
           </select>
         </Field>
         <Field label="Thời gian (phút, 0 = không giới hạn)"><input type="number" min={0} className={inputCls} value={e.duration} onChange={(x) => upd({ duration: +x.target.value || 0 })} /></Field>
+        <Field label="Hạn nộp (không bắt buộc)"><input type="date" className={inputCls} value={e.deadline ? e.deadline.slice(0, 10) : ''} onChange={(x) => upd({ deadline: x.target.value ? new Date(x.target.value + 'T23:59:00').toISOString() : undefined })} /></Field>
         <div className="sm:col-span-2 lg:col-span-3">
           <Field label="Giao cho lớp (học sinh lớp được chọn sẽ thấy đề)">
             <div className="flex flex-wrap gap-1.5">
@@ -178,6 +207,7 @@ Câu hỏi: ${JSON.stringify(payload)}`);
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <div className="font-black text-orange-700 text-lg">Câu hỏi ({e.questions.length})</div>
         <Btn small variant="violet" loading={aiBusy === 'all'} disabled={!hasKey()} title={hasKey() ? '' : 'Cần mã AI trong Cài đặt'} onClick={() => aiFill()}><Sparkles className="w-3.5 h-3.5" /> AI giải & điền đáp án, giải thích, chủ đề cho câu còn thiếu</Btn>
+        <Btn small variant="orange" loading={aiBusy === 'rescue'} disabled={!hasKey()} title="Tạo sẵn thẻ ghi nhớ + câu tương tự cho từng câu, học sinh dùng khi làm sai (không tốn AI của học sinh)" onClick={aiRescue}>🛟 AI tạo "Giải cứu kiến thức" ({e.questions.filter((q) => q.type !== 'essay' && q.rescue).length}/{e.questions.filter((q) => q.type !== 'essay').length})</Btn>
       </div>
       <div className="mt-2 space-y-2">
         {e.questions.map((q, i) => (

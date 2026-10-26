@@ -1,6 +1,6 @@
 // Lớp dữ liệu: Firebase (dùng chung toàn quốc) hoặc lưu trên máy (chế độ thử khi chưa có cấu hình).
 import { CONFIG } from './config';
-import type { ClassRoom, Exam, Resource, Review, Submission, Teacher } from './types';
+import type { Activity, ClassRoom, Exam, Resource, Review, School, Submission, Teacher } from './types';
 
 export const isCloud = () => !!CONFIG.firebase;
 const fb = () => import('./fb');
@@ -19,7 +19,7 @@ function dec<T>(kind: string, o: any): T {
 }
 
 // ---------- Chế độ trên một máy ----------
-type LCol = 'exams' | 'classes' | 'subs' | 'reviews' | 'resources' | 'teachers';
+type LCol = 'exams' | 'classes' | 'subs' | 'reviews' | 'resources' | 'teachers' | 'acts' | 'schools';
 function lget<T>(col: LCol): T[] { try { return JSON.parse(localStorage.getItem('kt5_db_' + col) || '[]'); } catch { return []; } }
 function lset(col: LCol, arr: any[]) {
   try { localStorage.setItem('kt5_db_' + col, JSON.stringify(arr)); }
@@ -226,4 +226,31 @@ export async function freshCode(kind: 'exams' | 'classes', make: () => string): 
     if (!exists) return c;
   }
   return make() + make().slice(0, 2);
+}
+
+// ---------- Hoạt động luyện tập ----------
+export async function classActs(code: string, f: { studentName?: string } = {}): Promise<Activity[]> {
+  if (!isCloud()) return lfind<Activity>('acts' as LCol, (a) => a.classCode === code && (!f.studentName || eq(a.studentName, f.studentName)));
+  return (await (await fb()).flist(`classes/${code}/acts`, f.studentName ? [['studentName', '==', f.studentName]] : [], 3000)) as Activity[];
+}
+export async function addAct(a: Activity) {
+  try {
+    const mine = JSON.parse(localStorage.getItem('kt5_myacts') || '[]');
+    mine.unshift(a);
+    localStorage.setItem('kt5_myacts', JSON.stringify(mine.slice(0, 300)));
+  } catch {}
+  if (!isCloud()) { lput('acts' as LCol, a); return; }
+  try { await withTimeout((await fb()).fset(`classes/${a.classCode}/acts/${a.id}`, JSON.parse(JSON.stringify(a))), 10000); } catch {}
+}
+
+// ---------- Nhà trường ----------
+export async function getSchool(code: string): Promise<School | null> {
+  code = code.trim().toUpperCase();
+  if (!isCloud()) return lget<School>('schools' as LCol).find((s) => s.id === code) || null;
+  return (await (await fb()).fget('schools/' + code)) as School | null;
+}
+export async function saveSchool(s: School) {
+  if (!isCloud()) return lput('schools' as LCol, s);
+  await (await fb()).fset('schools/' + s.id, JSON.parse(JSON.stringify(s)));
+  return s;
 }

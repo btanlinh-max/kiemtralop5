@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Send, Sparkles, Copy, Trash2 } from 'lucide-react';
 import { ask, hasKey } from '../ai';
-import { Btn, Card, toast } from './ui';
+import { Btn, Card, toast, copyText } from './ui';
 import { Rich } from './Rich';
 
 const PRESETS = [
@@ -66,7 +66,7 @@ export function AiAssistant() {
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : ''}`}>
             <div className={`max-w-[92%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed ${m.role === 'user' ? 'bg-emerald-600 text-white' : 'bg-white border-2 border-violet-100'}`}>
               <Rich text={m.text} />
-              {m.role === 'ai' && <div className="mt-2"><button className="text-xs font-bold text-violet-700 inline-flex items-center gap-1" onClick={() => navigator.clipboard.writeText(m.text.replace(/\*\*/g, '')).then(() => toast('Đã sao chép'))}><Copy className="w-3 h-3" /> Sao chép</button></div>}
+              {m.role === 'ai' && <div className="mt-2"><button className="text-xs font-bold text-violet-700 inline-flex items-center gap-1" onClick={() => copyText(m.text.replace(/\*\*/g, ''), 'Đã sao chép')}><Copy className="w-3 h-3" /> Sao chép</button></div>}
             </div>
           </div>
         ))}

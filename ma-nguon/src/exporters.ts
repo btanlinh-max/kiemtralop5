@@ -80,3 +80,24 @@ export async function subsToExcel(exam: Exam | null, subs: Submission[], fileNam
   XLSX.utils.book_append_sheet(wb, ws, 'Kết quả');
   XLSX.writeFile(wb, safeName(fileName) + '.xlsx');
 }
+
+// Phiếu bù hổng kiến thức: mỗi học sinh 1 trang, đúng phần em còn hổng (in cho HS không có thiết bị)
+export function remedialToWord(title: string, school: string, items: { name: string; className: string; parts: { topic: string; note?: string; questions: import('./types').Question[] }[] }[]) {
+  const L = 'ABCDEFGH';
+  const qHtml = (q: import('./types').Question, n: number) => {
+    let s = `<p><b>Câu ${n}.</b> ${fracHtml(q.type === 'fill' ? q.prompt.replace(/\[\[\d+\]\]/g, '…………') : q.prompt)}</p>`;
+    if (q.type === 'mcq') s += `<p style="margin-left:20pt">${(q.options || []).map((o, i) => `${L[i]}. ${fracHtml(o)}`).join('&nbsp;&nbsp;&nbsp;&nbsp;')}</p>`;
+    if (q.type === 'tf') s += (q.statements || []).map((t, i) => `<p style="margin-left:20pt">${String.fromCharCode(97 + i)}) ${fracHtml(t)} &nbsp; ☐</p>`).join('');
+    if (q.type === 'short' || q.type === 'essay') s += `<p>${'.'.repeat(140)}</p>`;
+    return s;
+  };
+  const key = (q: import('./types').Question) => q.type === 'mcq' ? L[q.answer ?? 0] : q.type === 'tf' ? (q.tfAnswers || []).map((v) => (v ? 'Đ' : 'S')).join(', ') : q.type === 'fill' ? (q.blanks || []).map((b) => b.split('|')[0]).join('; ') : q.type === 'short' ? (q.accepted || [])[0] || '' : q.guide || '';
+  const pages = items.map((it, k) => {
+    let n = 0;
+    const answers: string[] = [];
+    const body = it.parts.map((p) => `<h3 style="color:#b45309">Phần: ${esc(p.topic)}</h3>${p.note ? `<p><i>${fracHtml(p.note)}</i></p>` : ''}${p.questions.map((q) => { n++; answers.push(`Câu ${n}: ${plain(key(q))}`); return qHtml(q, n); }).join('')}`).join('');
+    return `${k ? '<br style="page-break-before:always">' : ''}<table width="100%"><tr><td><b>${esc(school.toUpperCase())}</b><br>Họ và tên: <b>${esc(it.name)}</b> – Lớp ${esc(it.className)}</td><td align="right"><b>PHIẾU BÙ HỔNG KIẾN THỨC</b><br>${esc(title)}</td></tr></table><hr>${body}<p style="font-size:10pt;color:#666;margin-top:16pt"><b>Đáp án (cô giữ lại):</b> ${esc(answers.join(' | '))}</p>`;
+  });
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>body{font-family:'Times New Roman';font-size:14pt} p{margin:4pt 0}</style></head><body>${pages.join('')}</body></html>`;
+  download(safeName('Phieu-bu-hong-' + title) + '.doc', new Blob(['﻿' + html], { type: 'application/msword' }));
+}

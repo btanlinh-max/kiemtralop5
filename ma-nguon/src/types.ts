@@ -37,6 +37,8 @@ export interface Question {
   accepted?: string[];
   // essay
   guide?: string;
+  // "Giải cứu kiến thức": thẻ ghi nhớ + câu tương tự (AI tạo sẵn khi giáo viên lưu đề)
+  rescue?: { card: string; similar: Question[] };
 }
 
 export interface Passage {
@@ -77,6 +79,9 @@ export interface Exam {
   ownerSchool?: string;
   public?: boolean; // chia sẻ lên kho đề chung
   copiedFrom?: string;
+  deadline?: string; // hạn nộp (ISO)
+  targets?: string[]; // chỉ giao cho một số học sinh: "MÃLỚP|Tên học sinh"
+  group?: string; // nhãn nhóm khi giao theo nhóm năng lực
 }
 
 export interface QResult {
@@ -154,6 +159,35 @@ export interface ClassRoom {
   province: string;
   students: string[];
   createdAt: string;
+  parentKeys?: Record<string, string>; // tên học sinh -> mã phụ huynh
+  notice?: string; // thông báo lớp
+  videos?: Record<string, string>; // chủ đề -> link video
+  schoolCode?: string;
+}
+
+// Hoạt động luyện tập của học sinh (ôn tập, nhiệm vụ mỗi ngày, giải cứu kiến thức)
+export interface Activity {
+  id: string;
+  classCode: string;
+  studentName: string;
+  kind: 'practice' | 'daily' | 'review' | 'rescue';
+  subject: string;
+  topic: string;
+  correct: number;
+  total: number;
+  percent: number;
+  durationSec: number;
+  at: string;
+}
+
+export interface School {
+  id: string; // mã trường
+  name: string;
+  province: string;
+  createdBy: string;
+  members: string[];
+  memberNames: Record<string, string>;
+  classes: string[];
 }
 
 export interface Teacher {
@@ -163,6 +197,7 @@ export interface Teacher {
   school: string;
   province: string;
   photo?: string;
+  schoolCode?: string;
 }
 
 // Thông tin lưu trên máy (học sinh nhớ lớp + tên)

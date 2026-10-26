@@ -2,10 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Users, Upload, Save, Download, Sparkles, RefreshCw, Trash2, Plus, QrCode, Copy, PencilLine, Printer } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import QRCode from 'qrcode';
-import type { ClassRoom, Review, Submission } from '../types';
+import type { Activity, ClassRoom, Review, Submission } from '../types';
 import { useStore, friendly } from '../store';
-import { classReviews, classSubs, deleteClass, deleteReview, freshCode, saveClass } from '../api';
-import { Bar, Btn, Card, Empty, Field, inputCls, Modal, Pill, toast } from './ui';
+import { classActs, classReviews, classSubs, deleteClass, deleteReview, freshCode, saveClass } from '../api';
+import { earlyWarnings, topicEvents } from '../analytics';
+import { ReportCard, SkillTree, TreeAndBadges, useStudentData, WeeklyBoard } from './Learner';
+import { parentLink } from './ParentView';
+import { Bar, Btn, Card, Empty, Field, inputCls, Modal, Pill, toast, copyText } from './ui';
 import { cleanName, fmtDate, GAP_THRESHOLD, makeCode, pct, rank, topicStats } from '../grading';
 import { examMap } from '../reviewGen';
 import { subjectInfo } from '../curriculum';
@@ -21,7 +24,7 @@ export function ClassShare({ c, onClose }: { c: ClassRoom; onClose: () => void }
   const [qr, setQr] = useState('');
   const link = classLink(c.id);
   useEffect(() => { QRCode.toDataURL(link, { width: 640, margin: 1 }).then(setQr); }, [link]);
-  const copy = async (t: string) => { try { await navigator.clipboard.writeText(t); toast('Đã sao chép!'); } catch { toast('Không sao chép được.', 'err'); } };
+  const copy = (t: string) => copyText(t);
   const msg = `🎒 Lớp ${c.name} – ${c.school}\nCác con vào web làm bài, ôn tập theo link: ${link}\n(hoặc vào web → Học sinh → nhập mã lớp ${c.id}), rồi chọn đúng tên mình.`;
   const print = () => {
     const w = window.open('', '_blank');
@@ -61,6 +64,18 @@ export function Students() {
   const [loading, setLoading] = useState(false);
   const cls = classes.find((c) => c.id === code) || null;
   const byId = useMemo(() => examMap(exams), [exams]);
+  const [acts, setActs] = useState<Activity[]>([]);
+  const [tool, setTool] = useState<'notice' | 'videos' | 'parents' | null>(null);
+  const warnings = useMemo(() => {
+    const out: { name: string; topic: string }[] = [];
+    const ns = new Set([...subs.map((s) => s.studentName), ...acts.map((a) => a.studentName)]);
+    for (const n of ns) {
+      const ev = topicEvents(subs.filter((s) => s.studentName === n), acts.filter((a) => a.studentName === n), byId);
+      for (const w of earlyWarnings(ev)) out.push({ name: n, topic: w.topic });
+    }
+    return out;
+  }, [subs, acts, byId]);
+  const topicsUsed = useMemo(() => [...new Set(exams.flatMap((e) => e.questions.map((q) => q.topic)).filter(Boolean))], [exams]);
 
   useEffect(() => { if (!cls && classes.length) setCode(classes[0].id); }, [classes, cls]);
 
@@ -68,9 +83,10 @@ export function Students() {
     if (!code) return;
     setLoading(true);
     try {
-      const [s, r] = await Promise.all([classSubs(code), classReviews(code)]);
+      const [s, r, a] = await Promise.all([classSubs(code), classReviews(code), classActs(code)]);
       setSubs(s);
       setReviews(r);
+      setActs(a);
     } catch (e: any) { toast(friendly(e), 'err'); } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [code]);
@@ -154,7 +170,22 @@ export function Students() {
           )}
         </div>
         {cls && <div className="text-xs text-slate-500 mt-2">🏫 {cls.school}{cls.province ? ' – ' + cls.province : ''} • Học sinh vào lớp bằng mã <b className="text-orange-600">{cls.id}</b> hoặc quét QR, rồi chọn đúng tên mình.</div>}
+        {cls && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            <Btn small variant="ghost" onClick={() => setTool('notice')}>📢 Thông báo lớp{cls.notice ? ' ✓' : ''}</Btn>
+            <Btn small variant="ghost" onClick={() => setTool('videos')}>🎬 Video theo chủ đề ({Object.keys(cls.videos || {}).length})</Btn>
+            <Btn small variant="ghost" onClick={() => setTool('parents')}>👨‍👩‍👧 Link Cổng phụ huynh</Btn>
+          </div>
+        )}
       </Card>
+
+      {cls && warnings.length > 0 && (
+        <Card className="p-4 border-rose-200 bg-rose-50">
+          <div className="font-black text-rose-800 mb-1">🧭 Cảnh báo sớm – sai liên tiếp 3 lần cùng một kỹ năng</div>
+          {warnings.map((w) => <div key={w.name + w.topic} className="text-sm py-0.5"><b>{w.name}</b>: {w.topic} <button className="text-xs underline text-rose-700 font-bold ml-1" onClick={() => setStudent(w.name)}>xem hồ sơ</button></div>)}
+          <div className="text-xs text-slate-600 mt-1">Phụ huynh của các em này cũng thấy lời nhắc tế nhị trong Cổng phụ huynh (kèm video nếu cô đã gắn).</div>
+        </Card>
+      )}
 
       {!classes.length ? (
         <Card><Empty icon="🏫" title="Thầy cô chưa có lớp nào">Bấm "Tạo lớp mới" (ví dụ 5A3), thêm danh sách học sinh, rồi gửi mã lớp cho học sinh.</Empty></Card>
@@ -204,118 +235,165 @@ export function Students() {
         </Field>
       </Modal>
 
+      {cls && names.length > 0 && (
+        <Card className="p-4">
+          <div className="font-black text-amber-700 mb-2">🏆 Bảng vàng chăm chỉ tuần này</div>
+          <WeeklyBoard key={cls.id + subs.length} classCode={cls.id} />
+        </Card>
+      )}
+
       {sharing && <ClassShare c={sharing} onClose={() => setSharing(null)} />}
-      {student && cls && <StudentProfile name={student} cls={cls} subs={subs.filter((s) => s.studentName.toLowerCase() === student.toLowerCase())} reviews={reviews.filter((r) => r.studentName.toLowerCase() === student.toLowerCase())} onClose={() => setStudent(null)} onChanged={load} />}
+      {cls && tool && <ClassTools tool={tool} cls={cls} names={names} topics={topicsUsed} onClose={() => setTool(null)} onSaved={(c) => setClasses((x) => x.map((y) => (y.id === c.id ? c : y)))} />}
+      {student && cls && <StudentProfile name={student} cls={cls} reviews={reviews.filter((r) => r.studentName.toLowerCase() === student.toLowerCase())} onClose={() => setStudent(null)} onChanged={load} />}
     </div>
   );
 }
 
-function StudentProfile({ name, cls, subs, reviews, onClose, onChanged }: { name: string; cls: ClassRoom; subs: Submission[]; reviews: Review[]; onClose: () => void; onChanged: () => void }) {
-  const { exams, teacher } = useStore();
-  const className = cls.name;
-  const byId = useMemo(() => examMap(exams), [exams]);
-  const stats = topicStats(subs, byId);
-  const sorted = [...subs].sort((a, b) => a.submittedAt.localeCompare(b.submittedAt));
+function StudentProfile({ name, cls, reviews, onClose, onChanged }: { name: string; cls: ClassRoom; reviews: Review[]; onClose: () => void; onChanged: () => void }) {
+  const { exams } = useStore();
+  const d = useStudentData(cls.id, name, exams);
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
-  const card = useRef<HTMLDivElement>(null);
-  const strong = stats.filter((t) => pct(t) >= 80).slice(-4).reverse();
-  const weak = stats.filter((t) => pct(t) < GAP_THRESHOLD).slice(0, 4);
+  const stats = d.skills.filter((s) => s.status !== 'gray');
+  const strong = stats.filter((s) => s.status === 'green').slice(0, 4);
+  const weak = stats.filter((s) => s.status === 'red' || s.status === 'yellow').slice(0, 4);
+  const plink = parentLink(cls, name);
 
   const aiComment = async () => {
     setBusy(true);
     try {
-      const t = await ask(`Viết nhận xét gửi phụ huynh (4–6 câu, giọng cô giáo chủ nhiệm ân cần, xưng "cô", gọi "con", không nêu tên đầy đủ) cho một học sinh lớp 5 dựa trên số liệu:
-- Các bài đã làm: ${sorted.map((s) => `${s.subject} – ${s.examTitle}: ${s.score}/10`).join('; ') || 'chưa có'}
-- Phần làm tốt: ${strong.map((x) => `${x.topic} (${pct(x)}%)`).join('; ') || 'chưa rõ'}
-- Phần cần cố gắng: ${weak.map((x) => `${x.topic} (${pct(x)}%)`).join('; ') || 'không có'}
-- Bài ôn tập riêng: ${reviews.length} bài, đã vững ${reviews.filter((r) => r.mastered).length}.
-Nội dung: khen điểm mạnh cụ thể → nêu phần cần cố gắng → gợi ý 1–2 việc bố mẹ có thể cùng con làm ở nhà (cụ thể, 10–15 phút/ngày). Chỉ trả về đoạn nhận xét.`);
+      const t = await ask(`Viết nhận xét gửi phụ huynh (4–6 câu, giọng cô giáo chủ nhiệm ân cần, xưng "cô", gọi "con", không nêu tên đầy đủ, theo tư duy phát triển, KHÔNG so sánh với bạn khác) cho một học sinh lớp 5 dựa trên số liệu:
+- Các bài đã làm: ${d.subs.map((s) => `${s.subject} – ${s.examTitle}: ${s.score}/10`).join('; ') || 'chưa có'}
+- Số lượt tự ôn tập: ${d.acts.length}; chuỗi ngày học: ${d.streakDays}
+- Phần làm tốt: ${strong.map((x) => `${x.topic} (${x.last}%)`).join('; ') || 'chưa rõ'}
+- Phần cần cố gắng: ${weak.map((x) => `${x.topic} (${x.last}%)`).join('; ') || 'không có'}
+Nội dung: khen nỗ lực và điểm mạnh cụ thể → nêu đúng 1 phần cần đồng hành → gợi ý 1 việc bố mẹ làm cùng con 10 phút/ngày. Chỉ trả về đoạn nhận xét.`);
       setComment(t.trim());
     } catch (e: any) { toast(e.message, 'err'); } finally { setBusy(false); }
   };
 
-  const savePng = async () => {
-    if (!card.current) return;
-    try {
-      const url = await toPng(card.current, { pixelRatio: 2, backgroundColor: '#fffbeb' });
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Phieu-ket-qua-${safeName(name)}.png`;
-      a.click();
-    } catch (e: any) { toast('Không tạo được ảnh: ' + e.message, 'err'); }
-  };
-
   return (
-    <Modal open onClose={onClose} full title={`🧒 Hồ sơ học tập – ${name} (${className})`}>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-3">
-          <Card className="p-4">
-            <div className="font-black text-slate-700 mb-2">📈 Điểm các bài đã làm</div>
-            {sorted.length === 0 ? <div className="text-sm text-slate-500">Chưa làm bài nào.</div> : (
-              <div className="flex items-end gap-1.5 h-36 overflow-x-auto">
-                {sorted.map((s) => (
-                  <div key={s.id} className="flex flex-col items-center gap-1 min-w-[38px]" title={`${s.examTitle} – ${fmtDate(s.submittedAt)}`}>
-                    <span className="text-[11px] font-black">{s.score.toLocaleString('vi-VN')}</span>
-                    <div className={`w-7 rounded-t-lg ${s.score >= 9 ? 'bg-emerald-500' : s.score >= 5 ? 'bg-sky-400' : 'bg-rose-400'}`} style={{ height: Math.max(6, s.score * 9) + 'px' }} />
-                    <span className="text-sm">{subjectInfo(s.subject).icon}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-          <Card className="p-4">
-            <div className="font-black text-slate-700 mb-2">🎯 Mức nắm kiến thức theo chủ đề</div>
-            <div className="space-y-2">
-              {stats.map((t) => (
-                <div key={t.subject + t.topic}>
-                  <div className="flex justify-between text-xs font-bold gap-2"><span>{subjectInfo(t.subject).icon} {t.topic}</span><span>{pct(t)}%</span></div>
-                  <Bar value={pct(t)} className="mt-0.5" />
+    <Modal open onClose={onClose} full title={`🧒 Hồ sơ học tập – ${name} (${cls.name})`}>
+      {d.loading ? <div className="text-center py-10 font-bold text-slate-500">Đang tải…</div> : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-3">
+            <Card className="p-4">
+              <div className="font-black text-slate-700 mb-2">📈 Điểm các bài đã làm</div>
+              {d.subs.length === 0 ? <div className="text-sm text-slate-500">Chưa làm bài nào.</div> : (
+                <div className="flex items-end gap-1.5 h-36 overflow-x-auto">
+                  {d.subs.map((s) => (
+                    <div key={s.id} className="flex flex-col items-center gap-1 min-w-[38px]" title={`${s.examTitle} – ${fmtDate(s.submittedAt)}`}>
+                      <span className="text-[11px] font-black">{s.score.toLocaleString('vi-VN')}</span>
+                      <div className={`w-7 rounded-t-lg ${s.score >= 9 ? 'bg-emerald-500' : s.score >= 5 ? 'bg-sky-400' : 'bg-rose-400'}`} style={{ height: Math.max(6, s.score * 9) + 'px' }} />
+                      <span className="text-sm">{subjectInfo(s.subject).icon}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="text-xs text-slate-500 font-bold mt-2">{d.acts.length} lượt tự ôn tập • 🔥 {d.streakDays} ngày liên tiếp</div>
+            </Card>
+            <Card className="p-4"><div className="font-black text-slate-700 mb-2">🗺️ Bản đồ kỹ năng</div><SkillTree skills={d.skills} compact /></Card>
+            <Card className="p-4"><div className="font-black text-slate-700 mb-2">🌳 Cây tri thức & huy hiệu</div><TreeAndBadges skills={d.skills} subs={d.subs} acts={d.acts} streakDays={d.streakDays} /></Card>
+            <Card className="p-4">
+              <div className="font-black text-violet-800 mb-2">📚 Bài ôn riêng đã giao ({reviews.length})</div>
+              {reviews.map((r) => (
+                <div key={r.id} className="flex items-center gap-2 py-1.5 border-b last:border-0 text-sm">
+                  <span className="flex-1"><b>{r.topic}</b> <span className="text-xs text-slate-500">• {r.source === 'ai' ? 'AI soạn' : 'từ kho'} • {fmtDate(r.createdAt)}</span></span>
+                  {r.mastered ? <Pill className="bg-emerald-100 border-emerald-200 text-emerald-800">Đã vững ({r.best}%)</Pill> : r.attempts ? <Pill className="bg-amber-100 border-amber-200 text-amber-800">Đang luyện ({r.best}%)</Pill> : <Pill className="bg-slate-100 border-slate-200">Chưa làm</Pill>}
+                  <button className="text-rose-500 p-1" onClick={async () => { if (window.confirm('Xoá bài ôn này?')) { await deleteReview(r); onChanged(); } }}><Trash2 className="w-4 h-4" /></button>
                 </div>
               ))}
-              {!stats.length && <div className="text-sm text-slate-500">Chưa có dữ liệu.</div>}
+              {!reviews.length && <div className="text-sm text-slate-500">Chưa có. Mở một bài làm trong tab Kết quả để giao bài ôn.</div>}
+            </Card>
+          </div>
+          <div className="space-y-3">
+            <Card className="p-4 bg-emerald-50 border-emerald-200">
+              <div className="font-black text-emerald-800">👨‍👩‍👧 Cổng phụ huynh của {name.split(' ').slice(-1)[0]}</div>
+              {plink ? (
+                <>
+                  <div className="text-xs font-mono break-all bg-white rounded-lg border p-2 mt-1">{plink}</div>
+                  <Btn small className="mt-2" onClick={() => copyText(`Kính gửi phụ huynh em ${name}: bố mẹ theo dõi việc học của con tại ${plink} (link riêng, bố mẹ vui lòng không chia sẻ).`, 'Đã chép tin nhắn gửi phụ huynh')}><Copy className="w-3.5 h-3.5" /> Chép tin nhắn kèm link</Btn>
+                </>
+              ) : <div className="text-sm text-slate-600 mt-1">Chưa tạo link – bấm "Link Cổng phụ huynh" ở trên để tạo cho cả lớp.</div>}
+            </Card>
+            <div className="flex flex-wrap gap-2">
+              <Btn variant="violet" disabled={!hasKey()} loading={busy} onClick={aiComment}><Sparkles className="w-4 h-4" /> AI viết lời nhắn của cô</Btn>
             </div>
-          </Card>
-          <Card className="p-4">
-            <div className="font-black text-violet-800 mb-2">📚 Bài ôn riêng đã giao ({reviews.length})</div>
-            {reviews.map((r) => (
-              <div key={r.id} className="flex items-center gap-2 py-1.5 border-b last:border-0 text-sm">
-                <span className="flex-1"><b>{r.topic}</b> <span className="text-xs text-slate-500">• {r.source === 'ai' ? 'AI soạn' : 'từ kho'} • {fmtDate(r.createdAt)}</span></span>
-                {r.mastered ? <Pill className="bg-emerald-100 border-emerald-200 text-emerald-800">Đã vững ({r.best}%)</Pill> : r.attempts ? <Pill className="bg-amber-100 border-amber-200 text-amber-800">Đang luyện ({r.best}%)</Pill> : <Pill className="bg-slate-100 border-slate-200">Chưa làm</Pill>}
-                {<button className="text-rose-500 p-1" onClick={async () => { if (window.confirm('Xoá bài ôn này?')) { await deleteReview(r); onChanged(); } }}><Trash2 className="w-4 h-4" /></button>}
-              </div>
-            ))}
-            {!reviews.length && <div className="text-sm text-slate-500">Chưa có. Mở một bài làm trong tab Kết quả để giao bài ôn.</div>}
-          </Card>
+            <textarea className={inputCls} rows={4} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Lời nhắn của cô (gõ hoặc để AI viết) – sẽ in trên phiếu…" />
+            <ReportCard name={name} cls={cls} subs={d.subs} acts={d.acts} skills={d.skills} streakDays={d.streakDays} teacherNote={comment} />
+          </div>
         </div>
+      )}
+    </Modal>
+  );
+}
 
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <Btn variant="violet" disabled={!hasKey()} loading={busy} onClick={aiComment}><Sparkles className="w-4 h-4" /> AI viết nhận xét gửi phụ huynh</Btn>
-            <Btn onClick={savePng}><Download className="w-4 h-4" /> Tải phiếu (ảnh gửi Zalo)</Btn>
-          </div>
-          <textarea className={inputCls} rows={4} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Nhận xét của cô giáo (gõ hoặc để AI viết)…" />
-          <div ref={card} className="rounded-3xl border-4 border-amber-300 bg-amber-50 p-5" style={{ width: '100%', maxWidth: 560 }}>
-            <div className="rounded-2xl p-3 text-white text-center" style={{ background: 'linear-gradient(135deg,#059669,#0d9488 45%,#d97706)' }}>
-              <div className="text-[11px] font-bold opacity-90">{(cls.school || CONFIG.school).toUpperCase()}</div>
-              <div className="text-lg font-black">PHIẾU KẾT QUẢ HỌC TẬP</div>
-              <div className="text-sm font-bold">{name} – Lớp {className}</div>
-            </div>
-            <div className="grid grid-cols-3 gap-2 my-3 text-center">
-              <div className="bg-white rounded-xl p-2"><div className="text-2xl font-black text-orange-500">{subs.length}</div><div className="text-[10px] font-bold text-slate-500">Bài đã làm</div></div>
-              <div className="bg-white rounded-xl p-2"><div className="text-2xl font-black text-emerald-600">{subs.length ? (Math.round((subs.reduce((a, s) => a + s.score, 0) / subs.length) * 10) / 10).toLocaleString('vi-VN') : '–'}</div><div className="text-[10px] font-bold text-slate-500">Điểm trung bình</div></div>
-              <div className="bg-white rounded-xl p-2"><div className="text-2xl font-black text-violet-600">{reviews.filter((r) => r.mastered).length}/{reviews.length}</div><div className="text-[10px] font-bold text-slate-500">Bài ôn đã vững</div></div>
-            </div>
-            <div className="bg-white rounded-xl p-3 text-[13px] space-y-1">
-              {sorted.slice(-5).map((s) => <div key={s.id} className="flex justify-between gap-2"><span>{subjectInfo(s.subject).icon} {s.examTitle}</span><b>{s.score.toLocaleString('vi-VN')} – {rank(s.score).label}</b></div>)}
-            </div>
-            {strong.length > 0 && <div className="mt-2 text-[13px]"><b className="text-emerald-700">🌟 Con làm tốt:</b> {strong.map((t) => t.topic).join('; ')}</div>}
-            {weak.length > 0 && <div className="mt-1 text-[13px]"><b className="text-rose-700">🔸 Con cần cố gắng:</b> {weak.map((t) => t.topic).join('; ')}</div>}
-            {comment && <div className="mt-2 bg-white rounded-xl p-3 text-[13px] leading-relaxed whitespace-pre-line"><b>💬 Lời nhắn của cô:</b><br />{comment}</div>}
-            <div className="text-right text-[11px] font-bold text-slate-500 mt-2">{teacher?.name || cls.ownerName} • {new Date().toLocaleDateString('vi-VN')}</div>
-          </div>
+function ClassTools({ tool, cls, names, topics, onClose, onSaved }: { tool: 'notice' | 'videos' | 'parents'; cls: ClassRoom; names: string[]; topics: string[]; onClose: () => void; onSaved: (c: ClassRoom) => void }) {
+  const [notice, setNotice] = useState(cls.notice || '');
+  const [videos, setVideos] = useState<Record<string, string>>(cls.videos || {});
+  const [busy, setBusy] = useState(false);
+  const [qrs, setQrs] = useState<Record<string, string>>({});
+  const save = async (patch: Partial<ClassRoom>, msg: string) => {
+    setBusy(true);
+    try { const c = { ...cls, ...patch }; await saveClass(c); onSaved(c); toast(msg); return c; } catch (e: any) { toast(friendly(e), 'err'); } finally { setBusy(false); }
+  };
+  const ensureKeys = async () => {
+    const keys = { ...(cls.parentKeys || {}) };
+    let n = 0;
+    for (const s of names) if (!keys[s]) { keys[s] = Math.random().toString(36).slice(2, 6) + Math.random().toString(36).slice(2, 6); n++; }
+    if (n) await save({ parentKeys: keys }, `Đã tạo link cho ${n} phụ huynh.`);
+    return { ...cls, parentKeys: keys };
+  };
+  useEffect(() => {
+    if (tool !== 'parents') return;
+    ensureKeys().then(async (c) => {
+      const m: Record<string, string> = {};
+      for (const s of names) { const l = parentLink(c, s); if (l) m[s] = await QRCode.toDataURL(l, { width: 300, margin: 1 }); }
+      setQrs(m);
+    });
+  }, [tool]);
+  const printCards = () => {
+    const w = window.open('', '_blank');
+    if (!w) return;
+    const c = cls;
+    w.document.write(`<html><head><meta charset="utf-8"><title>Thẻ phụ huynh ${c.name}</title><style>body{font-family:Arial;margin:12px}.g{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.c{border:2px dashed #f59e0b;border-radius:14px;padding:10px;text-align:center;break-inside:avoid;font-size:12px}.n{font-weight:900;font-size:15px}</style></head><body><div class="g">${names.map((n) => `<div class="c"><div>👨‍👩‍👧 CỔNG PHỤ HUYNH – Lớp ${c.name}</div><div class="n">${n}</div><img src="${qrs[n] || ''}" width="150"><div>Quét mã để xem kết quả học tập, bản tin tuần của con</div><div style="color:#888">${c.school}</div></div>`).join('')}</div><script>setTimeout(()=>print(),500)<\/script></body></html>`);
+    w.document.close();
+  };
+  return (
+    <Modal open onClose={onClose} wide title={tool === 'notice' ? '📢 Thông báo lớp' : tool === 'videos' ? '🎬 Video bài giảng theo chủ đề' : '👨‍👩‍👧 Link Cổng phụ huynh'}
+      footer={tool === 'notice' ? <Btn loading={busy} onClick={() => save({ notice: notice.trim() }, 'Đã đăng thông báo.').then(onClose)}>Đăng thông báo</Btn> : tool === 'videos' ? <Btn loading={busy} onClick={() => save({ videos: Object.fromEntries(Object.entries(videos).filter(([, v]) => v.trim())) }, 'Đã lưu video.').then(onClose)}>Lưu</Btn> : <Btn onClick={printCards} disabled={!Object.keys(qrs).length}><Printer className="w-4 h-4" /> In thẻ QR cả lớp</Btn>}>
+      {tool === 'notice' && (
+        <div className="space-y-2">
+          <textarea className={inputCls} rows={3} value={notice} onChange={(e) => setNotice(e.target.value)} placeholder="VD: Thứ Sáu 31/10 lớp kiểm tra Toán giữa kỳ. Các con ôn phần số thập phân nhé!" />
+          <div className="text-xs text-slate-500">Hiện trên đầu trang của học sinh và Cổng phụ huynh. Để trống rồi bấm Đăng để gỡ thông báo.</div>
         </div>
-      </div>
+      )}
+      {tool === 'videos' && (
+        <div className="space-y-2">
+          <div className="text-sm text-slate-600">Dán link YouTube (hoặc Drive) cho chủ đề. Khi em nào hổng chủ đề đó, video tự hiện trong Góc ôn tập và Cổng phụ huynh.</div>
+          {[...new Set([...topics, ...Object.keys(videos)])].map((t) => (
+            <div key={t} className="grid sm:grid-cols-[1fr_1.4fr] gap-2 items-center">
+              <div className="text-sm font-bold">{t}</div>
+              <input className={inputCls} value={videos[t] || ''} onChange={(e) => setVideos({ ...videos, [t]: e.target.value })} placeholder="https://youtu.be/…" />
+            </div>
+          ))}
+          {!topics.length && <div className="text-sm text-slate-500">Chưa có chủ đề – hãy tạo đề trước.</div>}
+        </div>
+      )}
+      {tool === 'parents' && (
+        <div className="space-y-2">
+          <div className="text-sm text-slate-600">Mỗi học sinh có 1 link riêng cho phụ huynh (không cần tài khoản). Gửi riêng từng phụ huynh qua Zalo, hoặc in thẻ QR phát cho học sinh mang về.</div>
+          {names.map((n) => {
+            const l = parentLink({ ...cls }, n);
+            return (
+              <div key={n} className="flex items-center gap-2 border-b py-1.5">
+                <span className="flex-1 font-bold text-sm">{n}</span>
+                {l ? <Btn small variant="ghost" onClick={() => copyText(`Kính gửi phụ huynh em ${n}: bố mẹ theo dõi việc học của con tại ${l} (link riêng, vui lòng không chia sẻ).`, 'Đã chép')}><Copy className="w-3.5 h-3.5" /> Chép tin nhắn</Btn> : <span className="text-xs text-slate-400">đang tạo…</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </Modal>
   );
 }

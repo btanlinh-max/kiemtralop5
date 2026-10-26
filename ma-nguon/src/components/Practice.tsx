@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { CheckCircle2, RotateCcw } from 'lucide-react';
 import type { Question } from '../types';
 import { QuestionView } from './QuestionView';
@@ -9,8 +9,9 @@ import { Rich } from './Rich';
 // Bộ câu luyện tập (bài ôn) – làm trên 1 trang, chấm ngay, làm lại được
 export function Practice({ title, summary, example, tips, questions, onFinish }: {
   title: string; summary?: string; example?: string; tips?: string; questions: Question[];
-  onFinish?: (percent: number) => void;
+  onFinish?: (percent: number, info: { correct: number; total: number; durationSec: number }) => void;
 }) {
+  const started = useRef(Date.now());
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [checked, setChecked] = useState(false);
   const [round, setRound] = useState(0);
@@ -45,12 +46,12 @@ export function Practice({ title, summary, example, tips, questions, onFinish }:
             </div>
           ))}
           {!checked ? (
-            <Btn className="w-full py-4 text-base" onClick={() => { setChecked(true); onFinish?.(percent); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><CheckCircle2 className="w-5 h-5" /> Chấm bài luyện tập</Btn>
+            <Btn className="w-full py-4 text-base" onClick={() => { setChecked(true); onFinish?.(percent, { correct: g.results.filter((r) => r.status === 'right').length, total: questions.length, durationSec: Math.round((Date.now() - started.current) / 1000) }); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><CheckCircle2 className="w-5 h-5" /> Chấm bài luyện tập</Btn>
           ) : (
             <div className={`sticky bottom-3 rounded-2xl p-4 border-2 shadow-xl ${percent >= 80 ? 'bg-emerald-50 border-emerald-300' : 'bg-amber-50 border-amber-300'}`}>
               <div className="font-black text-lg">{percent >= 80 ? '🌟 Tuyệt vời! Em đã nắm vững phần này.' : '💪 Cố lên! Em xem lại giải thích rồi làm lại nhé.'}</div>
               <div className="text-sm font-bold text-slate-600">Đúng {percent}% • Cần từ 80% để được đánh dấu "Đã vững".</div>
-              <Btn variant="orange" className="mt-2" onClick={() => { setAnswers({}); setChecked(false); setRound(round + 1); }}><RotateCcw className="w-4 h-4" /> Làm lại</Btn>
+              <Btn variant="orange" className="mt-2" onClick={() => { setAnswers({}); setChecked(false); setRound(round + 1); started.current = Date.now(); }}><RotateCcw className="w-4 h-4" /> Làm lại</Btn>
             </div>
           )}
         </>

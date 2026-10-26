@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, KeyRound, PlayCircle, Target, History, Sparkles, ChevronLeft, CheckCircle2, Search } from 'lucide-react';
+import { Sprout, RefreshCw, KeyRound, PlayCircle, Target, History, Sparkles, ChevronLeft, CheckCircle2, Search } from 'lucide-react';
 import type { ClassRoom, Exam, Review, Submission } from '../types';
 import { useStore, friendly } from '../store';
-import { classReviews, classSubs, getClass, reviewProgress } from '../api';
+import { addAct, classReviews, classSubs, getClass, reviewProgress } from '../api';
+import { Journey } from './Journey';
+import { uid } from '../grading';
 import { Bar, Btn, Card, Empty, Field, inputCls, Pill, toast } from './ui';
 import { COLOR_CHIP, subjectInfo, SUBJECT_NAMES } from '../curriculum';
 import { fmtDate, pct, rank } from '../grading';
@@ -71,9 +73,12 @@ export function StudentLogin({ presetCode }: { presetCode?: string }) {
   );
 }
 
-export function StudentHome({ onStart, initialTab }: { onStart: (exam: Exam) => void; initialTab?: 'exams' | 'review' | 'history' }) {
-  const { classExams: exams, profile, loading, refreshStudent } = useStore();
-  const [tab, setTab] = useState<'exams' | 'review' | 'history'>(initialTab || 'exams');
+export type StudentTab = 'exams' | 'journey' | 'review' | 'history';
+export function StudentHome({ onStart, initialTab }: { onStart: (exam: Exam) => void; initialTab?: StudentTab }) {
+  const { classExams: allExams, profile, loading, refreshStudent, myClass } = useStore();
+  const me = profile.classCode + '|' + profile.studentName;
+  const exams = allExams.filter((e) => !(e.targets || []).some((t) => t.startsWith(profile.classCode + '|')) || (e.targets || []).some((t) => t.toLowerCase() === me.toLowerCase()));
+  const [tab, setTab] = useState<StudentTab>(initialTab || 'exams');
   const [code, setCode] = useState('');
   const [subject, setSubject] = useState('');
   const [subs, setSubs] = useState<Submission[]>([]);
@@ -94,7 +99,7 @@ export function StudentHome({ onStart, initialTab }: { onStart: (exam: Exam) => 
   useEffect(() => { loadMine(); }, [profile.studentName, profile.classCode]);
 
   const open = exams;
-  const shown = open.filter((e) => !subject || e.subject === subject);
+  const shown = open.filter((e) => !subject || e.subject === subject).sort((a, b) => Number(subs.some((x) => x.examId === a.id)) - Number(subs.some((x) => x.examId === b.id)));
   const doneIds = new Set(subs.map((s) => s.examId));
 
   const go = () => {
@@ -106,15 +111,17 @@ export function StudentHome({ onStart, initialTab }: { onStart: (exam: Exam) => 
 
   const tabs = [
     { k: 'exams', label: 'Bài cần làm', icon: <PlayCircle className="w-5 h-5" /> },
-    { k: 'review', label: 'Góc ôn tập của em', icon: <Target className="w-5 h-5" /> },
+    { k: 'journey', label: 'Hành trình của em', icon: <Sprout className="w-5 h-5" /> },
+    { k: 'review', label: 'Góc ôn tập', icon: <Target className="w-5 h-5" /> },
     { k: 'history', label: 'Kết quả của em', icon: <History className="w-5 h-5" /> },
   ] as const;
 
   return (
     <div className="max-w-[1280px] mx-auto px-2 sm:px-4 space-y-4">
-      <div className="grid grid-cols-3 gap-2">
+      {myClass?.notice && <div className="rounded-2xl bg-sky-50 border-2 border-sky-200 px-4 py-3 text-[15px] font-bold text-sky-900">📢 {myClass.notice}</div>}
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
         {tabs.map((t) => (
-          <button key={t.k} onClick={() => setTab(t.k)} className={`rounded-2xl px-2 py-3 font-black text-xs sm:text-base flex flex-col sm:flex-row items-center justify-center gap-1.5 border-2 transition ${tab === t.k ? 'bg-orange-500 text-white border-orange-500 shadow-lg' : 'bg-white border-amber-200 text-slate-700'}`}>
+          <button key={t.k} onClick={() => setTab(t.k)} className={`rounded-2xl px-1 sm:px-2 py-3 font-black text-[11px] sm:text-base leading-tight flex flex-col sm:flex-row items-center justify-center gap-1.5 border-2 transition ${tab === t.k ? 'bg-orange-500 text-white border-orange-500 shadow-lg' : 'bg-white border-amber-200 text-slate-700'}`}>
             {t.icon}{t.label}
           </button>
         ))}
@@ -151,6 +158,8 @@ export function StudentHome({ onStart, initialTab }: { onStart: (exam: Exam) => 
                       <Pill className={COLOR_CHIP[si.color]}>{si.icon} {e.subject}</Pill>
                       <Pill className="bg-white border-slate-200 text-slate-600">{KIND_LABEL[e.kind]}</Pill>
                       {done && <Pill className="bg-emerald-100 text-emerald-800 border-emerald-200">✓ Đã làm</Pill>}
+                      {e.deadline && !done && <Pill className={new Date(e.deadline) < new Date() ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-amber-100 text-amber-800 border-amber-200'}>⏰ Hạn {new Date(e.deadline).toLocaleDateString('vi-VN')}</Pill>}
+                      {e.group && <Pill className="bg-violet-100 text-violet-800 border-violet-200">{e.group}</Pill>}
                     </div>
                     <div className="font-black text-slate-800 flex-1">{e.title}</div>
                     <div className="text-xs text-slate-500 font-bold mt-1">{e.questions.length} câu • {e.duration ? e.duration + ' phút' : 'Không giới hạn giờ'}</div>
@@ -163,7 +172,8 @@ export function StudentHome({ onStart, initialTab }: { onStart: (exam: Exam) => 
         </>
       )}
 
-      {tab === 'review' && <ReviewCorner subs={subs} reviews={reviews} exams={exams} reload={loadMine} />}
+      {tab === 'journey' && <Journey exams={allExams} onGoReview={() => setTab('review')} />}
+      {tab === 'review' && <ReviewCorner subs={subs} reviews={reviews} exams={allExams} reload={loadMine} />}
 
       {tab === 'history' && (
         subs.length === 0 ? <Card><Empty icon="📝" title="Em chưa làm bài nào">Làm bài xong, kết quả sẽ hiện ở đây.</Empty></Card> : (
@@ -194,7 +204,7 @@ export function StudentHome({ onStart, initialTab }: { onStart: (exam: Exam) => 
 function getAutoProg(): Record<string, number> { try { return JSON.parse(localStorage.getItem('kt5_autoprog') || '{}'); } catch { return {}; } }
 
 function ReviewCorner({ subs, reviews, exams, reload }: { subs: Submission[]; reviews: Review[]; exams: Exam[]; reload: () => void }) {
-  const { profile } = useStore();
+  const { profile, myClass } = useStore();
   const { stats, gaps, byId } = useMemo(() => studentGaps(subs, exams), [subs, exams]);
   const [open, setOpen] = useState<{ title: string; review?: Review; content: Pick<Review, 'summary' | 'example' | 'tips' | 'questions'>; key: string } | null>(null);
   const [auto, setAuto] = useState(getAutoProg);
@@ -206,7 +216,9 @@ function ReviewCorner({ subs, reviews, exams, reload }: { subs: Submission[]; re
       <div className="space-y-3">
         <Btn variant="ghost" onClick={() => { setOpen(null); reload(); }}><ChevronLeft className="w-4 h-4" /> Quay lại Góc ôn tập</Btn>
         <Card className="p-4 sm:p-6">
-          <Practice title={open.title} {...open.content} onFinish={async (p) => {
+          <Practice title={open.title} {...open.content} onFinish={async (p, info) => {
+            const [subject, topic] = open.review ? [open.review.subject, open.review.topic] : open.key.split('¦');
+            addAct({ id: uid('a'), classCode: profile.classCode, studentName: profile.studentName, kind: open.review ? 'review' : 'practice', subject, topic, correct: info.correct, total: info.total, percent: p, durationSec: info.durationSec, at: new Date().toISOString() });
             if (open.review) {
               try { await reviewProgress(open.review, p); } catch {}
             } else {
@@ -276,6 +288,7 @@ function ReviewCorner({ subs, reviews, exams, reload }: { subs: Submission[]; re
                   <div className="font-black">{t.topic}</div>
                   <div className="flex items-center gap-2 mt-1"><Bar value={pct(t)} className="flex-1" /><span className="text-xs font-black">{pct(t)}%</span></div>
                   <div className="text-xs text-slate-500 font-bold mt-1">Sai {t.wrongQids.length} câu{best ? ` • Luyện cao nhất ${best}%` : ''}</div>
+                  {myClass?.videos?.[t.topic] && <a href={myClass.videos[t.topic]} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 mt-1 text-xs font-black text-rose-600 underline">▶️ Xem video bài giảng của cô</a>}
                   <div className="flex gap-2 mt-2">
                     <Btn variant="orange" small className="flex-1" onClick={() => {
                       const c = autoReview(exams, t.subject, t.topic, t.wrongQids);

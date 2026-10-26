@@ -115,3 +115,25 @@ export function Bar({ value, className = '' }: { value: number; className?: stri
 export function confirmDo(msg: string) {
   return window.confirm(msg);
 }
+
+// Sao chép chữ (có cách dự phòng cho trình duyệt cũ / Zalo)
+export async function copyText(text: string, msg = 'Đã sao chép!') {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    } catch {
+      window.prompt('Bấm giữ để sao chép:', text);
+      return;
+    }
+  }
+  toast(msg);
+}

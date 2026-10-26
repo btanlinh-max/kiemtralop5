@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { Copy, Printer, Check } from 'lucide-react';
 import type { Exam } from '../types';
-import { Btn, Modal, toast } from './ui';
+import { Btn, Modal, toast, copyText } from './ui';
 import { useStore } from '../store';
 import { subjectInfo } from '../curriculum';
 
@@ -31,7 +31,7 @@ export function ShareModal({ exam, onClose, saveExam }: { exam: Exam; onClose: (
       toast(on ? 'Đã bỏ giao đề cho lớp.' : 'Đã giao đề – học sinh lớp sẽ thấy trong "Bài cần làm".');
     } catch {} finally { setBusy(false); }
   };
-  const copy = async (t: string) => { try { await navigator.clipboard.writeText(t); toast('Đã sao chép!'); } catch { toast('Không sao chép được, hãy bôi đen để chép.', 'err'); } };
+  const copy = (t: string) => copyText(t);
   const msg = c ? `📝 ${e.title} (${e.subject})\nCác con lớp ${c.name} vào làm bài theo link: ${link}\n(hoặc vào web → Học sinh → mã lớp ${c.id}, chọn tên, bài ở mục "Bài cần làm")` : '';
 
   const print = () => {

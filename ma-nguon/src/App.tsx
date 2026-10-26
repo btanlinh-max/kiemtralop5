@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FilePlus2, Layers, FileUp, Sparkles, BookCopy, BarChart3, Users, FolderOpen, Bot, Settings as Cog, PlayCircle, ChevronLeft, Zap } from 'lucide-react';
+import { School2, FilePlus2, Layers, FileUp, Sparkles, BookCopy, BarChart3, Users, FolderOpen, Bot, Settings as Cog, PlayCircle, ChevronLeft, Zap } from 'lucide-react';
 import { Banner, Footer } from './components/Banner';
 import { IdentityBar } from './components/IdentityBar';
 import { useStore, friendly } from './store';
@@ -25,8 +25,10 @@ import { makeCode } from './grading';
 import { subjectInfo } from './curriculum';
 import { KIND_LABEL } from './types';
 import { Rich } from './components/Rich';
+import { ParentView } from './components/ParentView';
+import { SchoolView } from './components/SchoolView';
 
-type Tab = 'bank' | 'results' | 'students' | 'resources' | 'ai' | 'settings';
+type Tab = 'bank' | 'results' | 'students' | 'school' | 'resources' | 'ai' | 'settings';
 
 function useHash() {
   const [h, setH] = useState(location.hash);
@@ -91,6 +93,10 @@ export default function App() {
     for (const e of list) await saveExam(e);
   };
 
+  // Cổng phụ huynh: #/ph/MÃLỚP/MÃPH
+  const ph = hash.match(/#\/ph\/([A-Z0-9]{4,8})\/([A-Za-z0-9]{6,20})/);
+  if (ph) return <div className="min-h-screen"><Banner compact /><main className="pt-2"><ParentView code={ph[1].toUpperCase()} keyStr={ph[2]} /></main><Footer /><Toaster /></div>;
+
   // ---------- Màn làm bài ----------
   if (preview) return <><TestRunner exam={preview} studentName="Xem trước" className="GV" classCode="PREVIEW" practice onExit={() => setPreview(null)} onDone={(sub) => { setDone({ exam: preview, sub, status: 'practice' }); setPreview(null); }} /><Toaster /></>;
   if (running) return <><TestRunner exam={running} studentName={profile.studentName} className={profile.className} classCode={profile.classCode} onExit={() => setRunning(null)} onDone={(sub, status) => { setDone({ exam: running, sub, status }); setRunning(null); }} /><Toaster /></>;
@@ -115,11 +121,12 @@ export default function App() {
               </div>
             </div>
             {/* Thanh điều hướng */}
-            <nav className="rounded-2xl bg-white border-2 border-amber-200 shadow-sm p-1.5 grid grid-cols-3 md:grid-cols-6 gap-1 no-print">
+            <nav className="rounded-2xl bg-white border-2 border-amber-200 shadow-sm p-1.5 grid grid-cols-4 md:grid-cols-7 gap-1 no-print">
               {([
                 ['bank', 'Ngân hàng đề', <BookCopy className="w-4 h-4" />],
                 ['results', 'Kết quả & Phân tích', <BarChart3 className="w-4 h-4" />],
                 ['students', 'Lớp học & Ôn tập', <Users className="w-4 h-4" />],
+                ['school', 'Nhà trường', <School2 className="w-4 h-4" />],
                 ['resources', 'Tài liệu chung', <FolderOpen className="w-4 h-4" />],
                 ['ai', 'Trợ lý AI', <Bot className="w-4 h-4" />],
                 ['settings', 'Cài đặt', <Cog className="w-4 h-4" />],
@@ -137,6 +144,7 @@ export default function App() {
             {tab === 'bank' && <ExamBank onEdit={setEditing} onShare={setSharing} onPreview={setPreview} onResults={(e) => { setResultsExam(e.id); setTab('results'); }} saveExam={saveExam} removeExam={async (e) => { await deleteExam(e.id); setExams((xs) => xs.filter((x) => x.id !== e.id)); toast('Đã xoá đề.'); }} />}
             {tab === 'results' && <Results examId={resultsExam} setExamId={setResultsExam} />}
             {tab === 'students' && <Students />}
+            {tab === 'school' && <SchoolView />}
             {tab === 'resources' && <Resources />}
             {tab === 'ai' && <AiAssistant />}
             {tab === 'settings' && <Settings />}
