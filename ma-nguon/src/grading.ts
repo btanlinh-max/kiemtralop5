@@ -80,8 +80,15 @@ export function gradeQuestion(q: Question, ans: any): QResult {
       if (!acc.length) return r(0, 'pending');
       return acc.some((a) => sameAnswer(ans || '', a)) ? r(max, 'right') : r(0, 'wrong');
     }
-    case 'essay':
-      return { qid: q.id, earned: 0, max, status: 'pending' };
+    case 'essay': {
+      // Có đáp số → chấm ngay phần đáp số, phần trình bày chờ cô chấm
+      const keys = (q.keys || []).filter((k) => k.trim());
+      if (!keys.length) return { qid: q.id, earned: 0, max, status: 'pending' };
+      const kp = Math.min(max, q.keyPoints ?? max / 2);
+      const given: string[] = (ans && ans.keys) || [];
+      const ok = keys.filter((k, i) => sameAnswer(given[i] || '', keyValue(k))).length;
+      return { qid: q.id, earned: Math.round(((kp * ok) / keys.length) * 100) / 100, max, status: 'pending', auto: ok + '/' + keys.length } as QResult;
+    }
   }
 }
 
@@ -173,4 +180,15 @@ export function fmtDur(sec: number) {
 // Tên hiển thị: bỏ phần thừa, chuẩn hoá hoa đầu từ
 export function cleanName(s: string) {
   return s.trim().replace(/\s+/g, ' ').split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+// Đáp số tự luận có thể ghi kèm nhãn: "a) m²=15000" → nhãn "a) m²", giá trị "15000"
+export function keyLabel(k: string, i: number, n: number) {
+  const m = k.match(/^([^=]{1,20})=(.+)$/);
+  if (m) return /^[a-h]$/i.test(m[1].trim()) ? m[1].trim() + ')' : m[1].trim();
+  return n > 1 ? String.fromCharCode(97 + i) + ')' : '';
+}
+export function keyValue(k: string) {
+  const m = k.match(/^([^=]{1,20})=(.+)$/);
+  return m ? m[2].trim() : k;
 }

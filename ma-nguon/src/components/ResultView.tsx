@@ -68,7 +68,7 @@ export function ResultView({ exam, sub, status, onHome, onReview }: {
           {exam.questions.map((q, i) => (
             <Card key={q.id} className="p-4">
               <QuestionView q={q} index={i + 1} value={sub.answers[q.id]} reveal readOnly result={sub.results.find((x) => x.qid === q.id)} />
-              {['wrong', 'partial'].includes(sub.results.find((x) => x.qid === q.id)?.status || '') && <Rescue q={q} subject={exam.subject} sub={sub} />}
+              {['wrong', 'partial'].includes(sub.results.find((x) => x.qid === q.id)?.status || '') && <Rescue q={q} subject={exam.subject} classCode={sub.classCode} studentName={sub.studentName} />}
             </Card>
           ))}
         </div>
@@ -81,10 +81,10 @@ export function ResultView({ exam, sub, status, onHome, onReview }: {
 }
 
 // "Giải cứu kiến thức": thẻ ghi nhớ + 1–2 câu tương tự để làm lại ngay
-function Rescue({ q, subject, sub }: { q: Question; subject: string; sub: Submission }) {
+export function Rescue({ q, subject, classCode, studentName, autoOpen }: { q: Question; subject: string; classCode: string; studentName: string; autoOpen?: boolean }) {
   const { classExams } = useStore();
-  const [open, setOpen] = useState(false);
-  const similar = useMemo(() => (q.rescue?.similar?.length ? q.rescue.similar : bankPractice(classExams, subject, q.topic, [], 2)), [q.id]);
+  const [open, setOpen] = useState(!!autoOpen);
+  const similar = useMemo(() => (q.rescue?.similar?.length ? q.rescue.similar : bankPractice(classExams, subject, q.topic, [], 6).filter((x) => x.prompt !== q.prompt).slice(0, 2)), [q.id]);
   const card = q.rescue?.card || q.explanation || '';
   if (!open) return <Btn small variant="orange" className="mt-3" onClick={() => setOpen(true)}>🛟 Giải cứu kiến thức</Btn>;
   return (
@@ -93,7 +93,7 @@ function Rescue({ q, subject, sub }: { q: Question; subject: string; sub: Submis
       {card && <div className="rounded-xl bg-white border-2 border-amber-200 p-3 text-[15px] mb-3"><b>📌 Ghi nhớ nhanh</b><div className="mt-1"><Rich text={card} /></div></div>}
       {similar.length ? (
         <Practice title="✏️ Làm lại câu tương tự" questions={similar}
-          onFinish={(p, info) => sub.classCode !== 'PREVIEW' && addAct({ id: uid('a'), classCode: sub.classCode, studentName: sub.studentName, kind: 'rescue', subject, topic: q.topic, correct: info.correct, total: info.total, percent: p, durationSec: info.durationSec, at: new Date().toISOString() })} />
+          onFinish={(p, info) => classCode !== 'PREVIEW' && addAct({ id: uid('a'), classCode, studentName, kind: 'rescue', subject, topic: q.topic, correct: info.correct, total: info.total, percent: p, durationSec: info.durationSec, at: new Date().toISOString() })} />
       ) : <div className="text-sm text-slate-600">Chưa có câu tương tự cho phần này – em vào Góc ôn tập để luyện thêm nhé.</div>}
     </div>
   );

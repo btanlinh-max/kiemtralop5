@@ -37,6 +37,8 @@ export interface Question {
   accepted?: string[];
   // essay
   guide?: string;
+  keys?: string[]; // đáp số các ý (a, b, c…) để chấm tự động một phần câu tự luận
+  keyPoints?: number; // số điểm dành cho phần đáp số (mặc định một nửa điểm câu)
   // "Giải cứu kiến thức": thẻ ghi nhớ + câu tương tự (AI tạo sẵn khi giáo viên lưu đề)
   rescue?: { card: string; similar: Question[] };
 }
@@ -80,6 +82,7 @@ export interface Exam {
   public?: boolean; // chia sẻ lên kho đề chung
   copiedFrom?: string;
   deadline?: string; // hạn nộp (ISO)
+  instant?: boolean; // chấm ngay từng câu khi làm (mặc định bật)
   targets?: string[]; // chỉ giao cho một số học sinh: "MÃLỚP|Tên học sinh"
   group?: string; // nhãn nhóm khi giao theo nhóm năng lực
 }
@@ -90,6 +93,7 @@ export interface QResult {
   max: number;
   status: 'right' | 'partial' | 'wrong' | 'pending'; // pending = tự luận chờ chấm
   comment?: string;
+  auto?: string; // số ý đáp số đúng (tự luận có đáp số), VD "2/4" 
 }
 
 export interface Submission {

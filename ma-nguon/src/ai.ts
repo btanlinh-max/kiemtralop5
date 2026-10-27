@@ -85,7 +85,7 @@ export const QUESTION_SCHEMA = `Mỗi câu hỏi là object:
  "pairs": [["vế trái","vế phải"],...] (match, đúng cặp),
  "items": ["bước 1","bước 2",...] (order, đúng thứ tự),
  "accepted": ["đáp án 1","cách viết khác"] (short),
- "guide": "hướng dẫn chấm/đáp án mẫu" (essay),
+ "guide": "hướng dẫn chấm/đáp án mẫu" (essay), "keys": ["đáp số ý a", "đáp số ý b"] (essay là bài tính/giải toán có đáp số ngắn; bài văn thì bỏ),
  "points": số điểm, "level": 1|2|3, "topic": "chủ đề/bài", "explanation": "giải thích ngắn vì sao đúng (để học sinh xem lại)"}`;
 
 // Chuẩn hoá câu hỏi AI trả về
@@ -134,7 +134,7 @@ export function cleanQuestions(arr: any[], fallbackTopic = ''): Question[] {
         if ((q.items || []).length < 2) return null;
       }
       if (type === 'short') q.accepted = (x.accepted || (x.answer !== undefined ? [x.answer] : [])).map(String);
-      if (type === 'essay') q.guide = String(x.guide || x.answer || '');
+      if (type === 'essay') { q.guide = String(x.guide || x.answer || ''); if (Array.isArray(x.keys) && x.keys.length) q.keys = x.keys.map(String); }
       return q;
     })
     .filter(Boolean) as Question[];

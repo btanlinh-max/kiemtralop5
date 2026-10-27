@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { ArrowDown, ArrowUp, Camera, Check, X as XIcon, Volume2 } from 'lucide-react';
 import type { Question, QResult } from '../types';
 import { Rich, plain } from './Rich';
-import { sameAnswer, shuffleArr } from '../grading';
+import { keyLabel, keyValue, sameAnswer, shuffleArr } from '../grading';
 import { LEVEL_SHORT } from '../curriculum';
 
 const L = 'ABCDEFGH';
@@ -225,6 +225,7 @@ function OrderView({ q, value, set, reveal, readOnly }: { q: Question; value: an
 
 function EssayView({ q, value, set, reveal, readOnly, result }: { q: Question; value: any; set: (v: any) => void; reveal?: boolean; readOnly?: boolean; result?: QResult }) {
   const v = typeof value === 'object' && value ? value : { text: value || '', img: '' };
+  const keys = (q.keys || []).filter((k) => k.trim());
   return (
     <div>
       <textarea
@@ -232,8 +233,27 @@ function EssayView({ q, value, set, reveal, readOnly, result }: { q: Question; v
         onChange={(e) => set({ ...v, text: e.target.value })}
         rows={q.points >= 3 ? 10 : 4}
         className="w-full rounded-2xl border-2 border-slate-300 px-4 py-3 text-[16px] leading-relaxed focus:border-orange-400 focus:outline-none"
-        placeholder="Em viết bài làm vào đây… (có thể chụp ảnh bài làm trên giấy ở nút bên dưới)"
+        placeholder={keys.length ? 'Em trình bày bài giải vào đây (hoặc chụp ảnh bài làm trên giấy)…' : 'Em viết bài làm vào đây… (có thể chụp ảnh bài làm trên giấy ở nút bên dưới)'}
       />
+      {keys.length > 0 && (
+        <div className="mt-2 rounded-2xl border-2 border-orange-200 bg-orange-50/60 p-3">
+          <div className="text-sm font-black text-orange-800 mb-1.5">✍️ Đáp số {keys.length > 1 ? 'từng ý' : ''} <span className="font-bold text-slate-500">(chấm ngay)</span></div>
+          <div className="flex flex-wrap gap-2">
+            {keys.map((k, i) => {
+              const given: string[] = v.keys || [];
+              const ok = reveal && sameAnswer(given[i] || '', keyValue(k));
+              return (
+                <span key={i} className="inline-flex items-center gap-1">
+                  {keyLabel(k, i, keys.length) && <b className="text-slate-600">{keyLabel(k, i, keys.length)}</b>}
+                  <input value={given[i] || ''} readOnly={readOnly} onChange={(e) => { const n = [...given]; n[i] = e.target.value; set({ ...v, keys: n }); }}
+                    className={`w-28 rounded-xl border-2 px-2 py-1.5 text-center font-bold ${reveal ? (ok ? 'border-emerald-400 bg-emerald-50' : 'border-rose-400 bg-rose-50') : 'border-orange-300 bg-white'}`} placeholder="…" />
+                  {reveal && (ok ? <Check className="w-5 h-5 text-emerald-600" /> : <span className="text-xs font-bold text-emerald-700">({keyValue(k).split('|')[0]})</span>)}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2 mt-2">
         {!readOnly && (
           <label className="inline-flex items-center gap-1.5 rounded-xl border-2 border-sky-200 bg-sky-50 text-sky-800 font-bold text-sm px-3 py-2 cursor-pointer">
@@ -247,7 +267,7 @@ function EssayView({ q, value, set, reveal, readOnly, result }: { q: Question; v
         <span className="text-xs text-slate-500">{(v.text || '').trim().split(/\s+/).filter(Boolean).length} chữ</span>
       </div>
       {v.img && <img src={v.img} alt="Ảnh bài làm" className="mt-2 max-h-80 rounded-xl border" />}
-      {reveal && result?.status === 'pending' && <div className="mt-2 text-sm font-bold text-sky-700">⏳ Câu tự luận – cô giáo sẽ chấm và nhận xét.</div>}
+      {reveal && result?.status === 'pending' && <div className="mt-2 text-sm font-bold text-sky-700">⏳ {result.auto ? `Đáp số đúng ${result.auto} ý (+${result.earned.toLocaleString('vi-VN')} điểm). Phần trình bày cô giáo sẽ chấm.` : 'Câu tự luận – cô giáo sẽ chấm và nhận xét.'}</div>}
       {reveal && q.guide && result?.status !== 'pending' && <div className="mt-2 text-sm text-emerald-800 bg-emerald-50 rounded-xl p-3 border border-emerald-200"><b>Gợi ý đáp án: </b><Rich text={q.guide} /></div>}
     </div>
   );

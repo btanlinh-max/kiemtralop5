@@ -1,15 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Clock, Grid3x3, BookOpenText, Send, WifiOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Grid3x3, BookOpenText, Send, WifiOff, CheckCircle2, XCircle, Star } from 'lucide-react';
 import type { Exam, Question, Submission } from '../types';
 import { QuestionView } from './QuestionView';
 import { Btn, Modal } from './ui';
 import { Rich } from './Rich';
-import { gradeAll, shuffleArr, uid } from '../grading';
+import { gradeAll, gradeQuestion, shuffleArr, uid } from '../grading';
+import { Rescue } from './ResultView';
+import { missingAnswer } from './ExamEditor';
 import { submit } from '../api';
 
 function answered(q: Question, v: any) {
   if (v === undefined || v === null || v === '') return false;
-  if (q.type === 'essay') return !!(v.text?.trim() || v.img);
+  if (q.type === 'essay') return !!(v.text?.trim() || v.img || (v.keys || []).some((k: string) => k && k.trim()));
   if (Array.isArray(v)) return v.some((x) => x !== undefined && x !== null && x !== '');
   return true;
 }
@@ -30,6 +32,9 @@ export function TestRunner({ exam, studentName, className, classCode, onDone, on
 
   const draft = useMemo(() => { try { return JSON.parse(localStorage.getItem(draftKey) || 'null'); } catch { return null; } }, [draftKey]);
   const [answers, setAnswers] = useState<Record<string, any>>(draft?.answers || {});
+  const instant = exam.instant !== false;
+  const [checked, setChecked] = useState<Record<string, boolean>>(draft?.checked || {});
+  const [flash, setFlash] = useState<'' | 'right' | 'wrong'>('');
   const [idx, setIdx] = useState(0);
   const [startedAt] = useState<string>(draft?.startedAt || new Date().toISOString());
   const [now, setNow] = useState(Date.now());
@@ -45,13 +50,25 @@ export function TestRunner({ exam, studentName, className, classCode, onDone, on
   }, []);
   useEffect(() => {
     if (practice) return;
-    try { localStorage.setItem(draftKey, JSON.stringify({ answers, startedAt })); } catch {}
-  }, [answers, draftKey, startedAt, practice]);
+    try { localStorage.setItem(draftKey, JSON.stringify({ answers, startedAt, checked })); } catch {}
+  }, [answers, checked, draftKey, startedAt, practice]);
   useEffect(() => { topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, [idx]);
 
   const elapsed = Math.floor((now - new Date(startedAt).getTime()) / 1000);
   const remain = exam.duration ? exam.duration * 60 - elapsed : null;
   const doneCount = questions.filter((q) => answered(q, answers[q.id])).length;
+  // Điểm tạm tính: các câu đã chấm ngay (trắc nghiệm…) + phần đáp số tự luận
+  const rawMax = questions.reduce((a, x) => a + (x.points || 0), 0) || 1;
+  const live = questions.reduce((a, x) => (checked[x.id] ? a + gradeQuestion(x, answers[x.id]).earned : a), 0);
+  const liveScore = Math.round((live / rawMax) * 100) / 10;
+  const autoGradable = (x: Question) => x.type !== 'essay' && !missingAnswer(x);
+  const check = (x: Question, v = answers[x.id]) => {
+    if (!instant || !autoGradable(x) || checked[x.id] || !answered(x, v)) return;
+    setChecked((c) => ({ ...c, [x.id]: true }));
+    const r = gradeQuestion(x, v);
+    setFlash(r.status === 'right' ? 'right' : 'wrong');
+    setTimeout(() => setFlash(''), 1200);
+  };
 
   const doSubmit = async () => {
     if (sending) return;
@@ -87,6 +104,7 @@ export function TestRunner({ exam, studentName, className, classCode, onDone, on
           <div className="font-black text-sm sm:text-base truncate">{exam.title}</div>
           <div className="text-[11px] text-slate-600 truncate">{practice ? 'XEM TRƯỚC (không lưu)' : `${studentName} • Lớp ${className}`} • Đã làm {doneCount}/{questions.length}</div>
         </div>
+        {instant && <div className="flex items-center gap-1 font-black tabular-nums rounded-xl px-2.5 py-1.5 bg-emerald-500 text-white" title="Điểm tạm tính (chưa gồm phần tự luận cô chấm)"><Star className="w-4 h-4" /> {liveScore.toLocaleString('vi-VN')}</div>}
         <div className={`flex items-center gap-1 font-black tabular-nums rounded-xl px-2.5 py-1.5 ${remain !== null && remain < 120 ? 'bg-rose-500 text-white animate-pulse' : 'bg-white border-2 border-amber-200 text-slate-800'}`}>
           <Clock className="w-4 h-4" /> {timeTxt}
         </div>
@@ -94,6 +112,7 @@ export function TestRunner({ exam, studentName, className, classCode, onDone, on
       </div>
       {!navigator.onLine && !practice && <div className="mt-2 rounded-xl bg-amber-100 text-amber-900 text-sm font-bold px-3 py-2 flex items-center gap-2"><WifiOff className="w-4 h-4" /> Đang mất mạng – em cứ làm tiếp, bài được lưu trên máy và tự gửi khi có mạng.</div>}
 
+      {flash && <div className="fixed inset-0 z-40 pointer-events-none flex items-center justify-center"><div className={`text-8xl drop-shadow-xl animate-bounce ${flash === 'right' ? 'text-emerald-500' : 'text-rose-500'}`}>{flash === 'right' ? '✔' : '✘'}</div></div>}
       <div className="h-2 bg-amber-100 rounded-full mt-2 overflow-hidden"><div className="h-full bg-gradient-to-r from-emerald-500 to-orange-400" style={{ width: (doneCount / Math.max(1, questions.length)) * 100 + '%' }} /></div>
 
       <div className={`mt-3 grid gap-3 ${passage ? 'lg:grid-cols-2' : ''}`}>
@@ -112,7 +131,26 @@ export function TestRunner({ exam, studentName, className, classCode, onDone, on
           </div>
         )}
         <div className="bg-white rounded-2xl border-2 border-amber-100 shadow-sm p-4 sm:p-6">
-          {q && <QuestionView key={q.id} q={q} index={idx + 1} value={answers[q.id]} onChange={(v) => setAnswers((a) => ({ ...a, [q.id]: v }))} />}
+          {q && (() => {
+            const isChecked = !!checked[q.id];
+            const res = isChecked ? gradeQuestion(q, answers[q.id]) : undefined;
+            return (
+              <>
+                {isChecked && res && (
+                  <div className={`mb-3 flex items-center gap-2 rounded-2xl px-4 py-2.5 font-black text-lg ${res.status === 'right' ? 'bg-emerald-100 text-emerald-800' : res.status === 'partial' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-700'}`}>
+                    {res.status === 'right' ? <CheckCircle2 className="w-7 h-7" /> : <XCircle className="w-7 h-7" />}
+                    {res.status === 'right' ? `Chính xác! +${res.earned.toLocaleString('vi-VN')} điểm` : res.status === 'partial' ? `Đúng một phần: +${res.earned.toLocaleString('vi-VN')} điểm` : 'Chưa đúng rồi – xem đáp án và "Giải cứu kiến thức" bên dưới nhé'}
+                  </div>
+                )}
+                <QuestionView key={q.id} q={q} index={idx + 1} value={answers[q.id]} reveal={isChecked} readOnly={isChecked} result={res}
+                  onChange={(v) => { setAnswers((a) => ({ ...a, [q.id]: v })); if (q.type === 'mcq') check(q, v); }} />
+                {instant && autoGradable(q) && q.type !== 'mcq' && !isChecked && (
+                  <Btn className="mt-4 w-full sm:w-auto" disabled={!answered(q, answers[q.id])} onClick={() => check(q)}><CheckCircle2 className="w-4 h-4" /> Kiểm tra câu này</Btn>
+                )}
+                {isChecked && res && res.status !== 'right' && <Rescue key={'r' + q.id} autoOpen q={q} subject={exam.subject} classCode={practice ? 'PREVIEW' : classCode} studentName={studentName} />}
+              </>
+            );
+          })()}
         </div>
       </div>
 
@@ -132,10 +170,10 @@ export function TestRunner({ exam, studentName, className, classCode, onDone, on
         <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
           {questions.map((qq, i) => (
             <button key={qq.id} onClick={() => { setIdx(i); setShowGrid(false); }}
-              className={`h-12 rounded-xl font-black border-2 ${i === idx ? 'border-orange-500 ring-2 ring-orange-300' : 'border-transparent'} ${answered(qq, answers[qq.id]) ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-700'}`}>{i + 1}</button>
+              className={`h-12 rounded-xl font-black border-2 ${i === idx ? 'border-orange-500 ring-2 ring-orange-300' : 'border-transparent'} ${checked[qq.id] ? (gradeQuestion(qq, answers[qq.id]).status === 'right' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white') : answered(qq, answers[qq.id]) ? 'bg-sky-500 text-white' : 'bg-slate-100 text-slate-700'}`}>{checked[qq.id] ? (gradeQuestion(qq, answers[qq.id]).status === 'right' ? '✓' : '✗') : i + 1}</button>
           ))}
         </div>
-        <div className="flex gap-4 text-xs font-bold text-slate-600 mt-3"><span>🟩 Đã làm</span><span>⬜ Chưa làm</span></div>
+        <div className="flex flex-wrap gap-4 text-xs font-bold text-slate-600 mt-3">{instant && <><span>🟩 ✓ Đúng</span><span>🟥 ✗ Sai</span></>}<span>🟦 Đã làm (chờ chấm)</span><span>⬜ Chưa làm</span></div>
         <Btn className="w-full mt-4" onClick={() => { setShowGrid(false); setConfirm(true); }}><Send className="w-4 h-4" /> Nộp bài</Btn>
       </Modal>
 

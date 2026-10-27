@@ -81,7 +81,7 @@ export function ExamEditor({ exam, onClose, onSave, onPreview }: { exam: Exam; o
           passage: q.passageId ? plain(e.passages.find((p) => p.id === q.passageId)?.content).slice(0, 2500) : undefined,
         }));
         const r = await askJson<any[]>(`Môn ${e.subject} lớp 5. Với mỗi câu hỏi dưới đây, hãy GIẢI và cho biết:
-- "answer": (mcq) chỉ số đáp án đúng bắt đầu từ 0; (tf) "tfAnswers": [true/false...]; (fill) "blanks": [đáp án từng chỗ trống theo thứ tự]; (short) "accepted": [đáp án]; (essay) "guide": hướng dẫn chấm/đáp án mẫu ngắn gọn có biểu điểm.
+- "answer": (mcq) chỉ số đáp án đúng bắt đầu từ 0; (tf) "tfAnswers": [true/false...]; (fill) "blanks": [đáp án từng chỗ trống theo thứ tự]; (short) "accepted": [đáp án]; (essay) "guide": hướng dẫn chấm/đáp án mẫu ngắn gọn có biểu điểm; nếu là bài tính/giải toán có đáp số ngắn thì thêm "keys": [đáp số từng ý a, b, c… theo thứ tự, chỉ ghi số/kết quả, phân số dạng a/b]; bài văn/câu trả lời tự do thì không có keys.
 - "explanation": giải thích ngắn gọn cho học sinh lớp 5 (1–3 câu, có phép tính nếu là Toán).
 - "topic": chọn 1 chủ đề phù hợp nhất trong danh sách: ${JSON.stringify(topics)}
 - "level": 1, 2 hoặc 3 theo TT27.
@@ -96,6 +96,7 @@ Câu hỏi: ${JSON.stringify(payload)}`);
           if (q.type === 'fill' && Array.isArray(a.blanks) && (only || missingAnswer(q))) patch.blanks = a.blanks.map(String);
           if (q.type === 'short' && Array.isArray(a.accepted) && (only || missingAnswer(q))) patch.accepted = a.accepted.map(String);
           if (q.type === 'essay' && a.guide && (only || !q.guide)) patch.guide = String(a.guide);
+          if (q.type === 'essay' && Array.isArray(a.keys) && a.keys.length && (only || !(q.keys || []).length)) patch.keys = a.keys.map(String);
           if (a.explanation && (only || !q.explanation)) patch.explanation = String(a.explanation);
           if (a.topic && (only || !q.topic)) patch.topic = String(a.topic);
           if ([1, 2, 3].includes(+a.level) && only) patch.level = +a.level as Level;
@@ -189,6 +190,7 @@ Câu hỏi: ${JSON.stringify(payload)}`);
       <div className="flex flex-wrap gap-4 mt-3 text-sm font-bold">
         <label className="flex items-center gap-2"><input type="checkbox" className="w-5 h-5 accent-emerald-600" checked={e.open} onChange={(x) => upd({ open: x.target.checked })} /> Mở cho học sinh làm</label>
         <label className="flex items-center gap-2"><input type="checkbox" className="w-5 h-5 accent-emerald-600" checked={e.shuffle} onChange={(x) => upd({ shuffle: x.target.checked })} /> Đảo thứ tự câu (chống chép bài)</label>
+        <label className="flex items-center gap-2"><input type="checkbox" className="w-5 h-5 accent-emerald-600" checked={e.instant !== false} onChange={(x) => upd({ instant: x.target.checked })} /> Chấm ngay từng câu khi làm (✓/✗, Giải cứu kiến thức, điểm hiện liền)</label>
         <label className="flex items-center gap-2"><input type="checkbox" className="w-5 h-5 accent-emerald-600" checked={e.showAnswers} onChange={(x) => upd({ showAnswers: x.target.checked })} /> Cho xem đáp án & giải thích sau khi nộp</label>
       </div>
 
@@ -361,6 +363,14 @@ export function QuestionEditor({ q, topics, passages, onChange }: { q: Question;
       {q.type === 'order' && <Field label="Các bước theo ĐÚNG thứ tự (học sinh sẽ thấy bị xáo trộn)"><ListEditor items={q.items || []} onChange={(v) => onChange({ items: v })} placeholder="Bước" /></Field>}
       {q.type === 'short' && <Field label="Đáp án chấp nhận (mỗi dòng một cách viết)" hint="Hệ thống tự hiểu 5,07 = 5.07; 3 000 = 3000; không phân biệt hoa thường"><ListEditor items={q.accepted || []} onChange={(v) => onChange({ accepted: v })} placeholder="Đáp án" /></Field>}
       {q.type === 'essay' && <Field label="Hướng dẫn chấm / đáp án mẫu (AI dùng để gợi ý chấm)"><textarea className={inputCls} rows={3} value={q.guide || ''} onChange={(e) => onChange({ guide: e.target.value })} /></Field>}
+      {q.type === 'essay' && (
+        <div className="rounded-2xl border-2 border-orange-200 bg-orange-50/50 p-3">
+          <div className="text-xs font-black text-orange-800 mb-1">✍️ ĐÁP SỐ ĐỂ CHẤM NGAY (không bắt buộc – dùng cho bài tính, giải toán có đáp số)</div>
+          <div className="text-[11px] text-slate-600 mb-2">Mỗi dòng là đáp số của 1 ý (a, b, c…). Nhiều cách viết đúng ngăn bởi dấu | (VD: 3/5|0,6). Học sinh điền đáp số → được điểm phần đáp số ngay; phần trình bày cô chấm sau. Bỏ trống nếu là bài văn, câu trả lời tự do.</div>
+          <ListEditor items={q.keys || []} onChange={(v) => onChange({ keys: v })} placeholder="Đáp số ý" />
+          {(q.keys || []).some((k) => k.trim()) && <Field label={`Điểm cho phần đáp số (tối đa ${q.points})`}><input type="number" step={0.25} min={0} max={q.points} className={inputCls} value={q.keyPoints ?? q.points / 2} onChange={(e) => onChange({ keyPoints: Math.min(q.points, +e.target.value || 0) })} /></Field>}
+        </div>
+      )}
       <Field label="Giải thích cho học sinh (hiện khi xem lại bài)"><textarea className={inputCls} rows={2} value={q.explanation || ''} onChange={(e) => onChange({ explanation: e.target.value })} /></Field>
     </div>
   );

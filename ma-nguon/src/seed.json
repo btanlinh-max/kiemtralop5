@@ -175,7 +175,11 @@
     "explanation": "",
     "type": "essay",
     "points": 1,
-    "guide": "a) 125 × 37 × 8 = (125 × 8) × 37 = 1000 × 37 = 37 000 (0,5đ)\nb) {3/5} × ({7/9} + {2/9}) = {3/5} × 1 = {3/5} (0,5đ)"
+    "guide": "a) 125 × 37 × 8 = (125 × 8) × 37 = 1000 × 37 = 37 000 (0,5đ)\nb) {3/5} × ({7/9} + {2/9}) = {3/5} × 1 = {3/5} (0,5đ)",
+    "keys": [
+     "a=37000",
+     "b=3/5"
+    ]
    },
    {
     "id": "seed_toan1_q12",
@@ -185,7 +189,12 @@
     "explanation": "",
     "type": "essay",
     "points": 2,
-    "guide": "Chiều rộng: 150 × {2/3} = 100 (m). Diện tích: 150 × 100 = 15 000 (m²) = 1,5 ha (1đ)\nSố thóc: 15 000 : 100 × 65 = 9 750 (kg) = 9,75 tấn (1đ)\nĐáp số: a) 15 000 m², 1,5 ha; b) 9,75 tấn"
+    "guide": "Chiều rộng: 150 × {2/3} = 100 (m). Diện tích: 150 × 100 = 15 000 (m²) = 1,5 ha (1đ)\nSố thóc: 15 000 : 100 × 65 = 9 750 (kg) = 9,75 tấn (1đ)\nĐáp số: a) 15 000 m², 1,5 ha; b) 9,75 tấn",
+    "keys": [
+     "a) m²=15000",
+     "a) ha=1,5",
+     "b) tấn=9,75"
+    ]
    },
    {
     "id": "seed_toan1_q13",
@@ -195,7 +204,10 @@
     "explanation": "",
     "type": "essay",
     "points": 1,
-    "guide": "= {8/16} + {4/16} + {2/16} + {1/16} = {15/16} (hoặc 1 − {1/16} = {15/16})"
+    "guide": "= {8/16} + {4/16} + {2/16} + {1/16} = {15/16} (hoặc 1 − {1/16} = {15/16})",
+    "keys": [
+     "15/16"
+    ]
    }
   ],
   "author": "Cô giáo Phạm Hồng Hạnh",
@@ -205,7 +217,8 @@
   "open": true,
   "shuffle": false,
   "showAnswers": true,
-  "classes": []
+  "classes": [],
+  "instant": true
  },
  {
   "id": "seed_toan2",
@@ -388,7 +401,11 @@
     "explanation": "",
     "type": "essay",
     "points": 1,
-    "guide": "a) 36 000 : 48 + 125 × 16 = 750 + 2 000 = 2 750 (0,5đ)\nb) {4/5} − {1/3} = {12/15} − {5/15} = {7/15} (0,5đ)"
+    "guide": "a) 36 000 : 48 + 125 × 16 = 750 + 2 000 = 2 750 (0,5đ)\nb) {4/5} − {1/3} = {12/15} − {5/15} = {7/15} (0,5đ)",
+    "keys": [
+     "a=2750",
+     "b=7/15"
+    ]
    },
    {
     "id": "seed_toan2_q12",
@@ -398,7 +415,11 @@
     "explanation": "",
     "type": "essay",
     "points": 2,
-    "guide": "Diện tích mảnh đất: 40 × 40 = 1 600 (m²); vườn hoa: 1 600 × {3/8} = 600 (m²); trồng rau: 1 600 − 600 = 1 000 (m²) (1đ)\nSố rau: 1 000 : 10 × 25 = 2 500 (kg) = 25 tạ (1đ)"
+    "guide": "Diện tích mảnh đất: 40 × 40 = 1 600 (m²); vườn hoa: 1 600 × {3/8} = 600 (m²); trồng rau: 1 600 − 600 = 1 000 (m²) (1đ)\nSố rau: 1 000 : 10 × 25 = 2 500 (kg) = 25 tạ (1đ)",
+    "keys": [
+     "a) m²=1000",
+     "b) tạ=25"
+    ]
    },
    {
     "id": "seed_toan2_q13",
@@ -408,7 +429,11 @@
     "explanation": "",
     "type": "essay",
     "points": 1,
-    "guide": "a) x = 3 (0,5đ)  b) x = 6; 7 (0,5đ)"
+    "guide": "a) x = 3 (0,5đ)  b) x = 6; 7 (0,5đ)",
+    "keys": [
+     "a) x=3",
+     "b) x=6; 7|6;7|6,7|6, 7|6 và 7|7; 6"
+    ]
    }
   ],
   "author": "Cô giáo Phạm Hồng Hạnh",
@@ -418,7 +443,8 @@
   "open": true,
   "shuffle": false,
   "showAnswers": true,
-  "classes": []
+  "classes": [],
+  "instant": true
  },
  {
   "id": "seed_tv1",
@@ -611,6 +637,7 @@
   "open": true,
   "shuffle": false,
   "showAnswers": true,
-  "classes": []
+  "classes": [],
+  "instant": true
  }
 ]
