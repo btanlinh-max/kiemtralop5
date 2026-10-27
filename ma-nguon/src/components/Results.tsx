@@ -5,7 +5,7 @@ import { useStore } from '../store';
 import { classSubs, deleteSub, saveSub as apiSaveSub, saveReview } from '../api';
 import { friendly } from '../store';
 import { Bar, Btn, Card, Empty, Field, inputCls, Modal, Pill, toast, copyText } from './ui';
-import { fmtDate, fmtDur, GAP_THRESHOLD, pct, rank, summarize, topicStats } from '../grading';
+import { fmtDate, fmtDur, GAP_THRESHOLD, gradeQuestion, pct, rank, summarize, topicStats } from '../grading';
 import { subsToExcel } from '../exporters';
 import { QuestionView } from './QuestionView';
 import { askJson, hasKey } from '../ai';
@@ -167,6 +167,25 @@ export function Results({ examId, setExamId }: { examId: string; setExamId: (id:
           </Field>
           <Btn variant="ghost" onClick={load} loading={loading}><RefreshCw className="w-4 h-4" /> Tải lại</Btn>
           <label className="flex items-center gap-1.5 text-sm font-bold rounded-xl border-2 border-slate-200 px-3 py-2"><input type="checkbox" className="w-4 h-4 accent-rose-500" checked={live} onChange={(e) => setLive(e.target.checked)} /> {live ? <span className="text-rose-600">● Đang theo dõi trực tiếp</span> : 'Theo dõi trực tiếp'}</label>
+          <Btn variant="ghost" disabled={!subs.length || !!bulk} title="Chấm lại phần tự chấm theo đáp án hiện tại của đề (giữ nguyên điểm tự luận cô đã chấm)" onClick={async () => {
+            if (!window.confirm(`Chấm lại ${subs.length} bài theo đáp án hiện tại của đề? Điểm tự luận cô đã chấm được giữ nguyên.`)) return;
+            setBulk('regrade');
+            let n = 0;
+            try {
+              for (const s of subs) {
+                const results = exam.questions.map((q) => {
+                  const old = s.results.find((r) => r.qid === q.id);
+                  if (q.type === 'essay' && old && old.status !== 'pending') return old;
+                  const r = gradeQuestion(q, s.answers[q.id]);
+                  return q.type === 'essay' && old?.comment ? { ...r, comment: old.comment } : r;
+                });
+                const ns = regrade(s, results);
+                if (ns.score !== s.score || ns.pending !== s.pending) { await apiSaveSub(ns); n++; }
+              }
+              toast(`Đã chấm lại – ${n} bài thay đổi điểm.`);
+              load();
+            } catch (e: any) { toast(friendly(e), 'err'); } finally { setBulk(''); }
+          }}>🔄 Chấm lại</Btn>
           <Btn variant="ghost" onClick={() => subsToExcel(exam, latest, 'Ket-qua-' + exam.title + (cls ? '-' + cls : ''))} disabled={!latest.length}><FileSpreadsheet className="w-4 h-4" /> Excel</Btn>
         </div>
       </Card>
@@ -354,7 +373,7 @@ export function SubmissionDetail({ sub, exam, onClose, onSave, onDelete }: { sub
   const approve = async () => {
     setBusy('save');
     try {
-      const fixed = results.map((r) => (r.status === 'pending' ? { ...r, status: (r.earned >= r.max ? 'right' : r.earned > 0 ? 'partial' : 'wrong') as QResult['status'] } : r));
+      const fixed = results.map((r) => (r.status === 'pending' && r.max > 0 ? { ...r, status: (r.earned >= r.max ? 'right' : r.earned > 0 ? 'partial' : 'wrong') as QResult['status'] } : r));
       const ns = regrade(sub, fixed);
       delete (ns as any).aiDraft;
       await onSave(ns);

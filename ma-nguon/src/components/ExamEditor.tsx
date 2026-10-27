@@ -6,7 +6,7 @@ import { Btn, Field, inputCls, Modal, Pill, toast } from './ui';
 import { LEVEL_LABEL, LEVEL_SHORT, SUBJECT_NAMES, subjectInfo } from '../curriculum';
 import { Rich, plain } from './Rich';
 import { uid } from '../grading';
-import { askJson, cleanQuestions, hasKey, QUESTION_SCHEMA } from '../ai';
+import { askJson, cleanQuestions, hasKey, QUESTION_SCHEMA, resolveMcqAnswer } from '../ai';
 import { useStore } from '../store';
 
 export function blankQuestion(type: QType, topic = ''): Question {
@@ -81,7 +81,7 @@ export function ExamEditor({ exam, onClose, onSave, onPreview }: { exam: Exam; o
           passage: q.passageId ? plain(e.passages.find((p) => p.id === q.passageId)?.content).slice(0, 2500) : undefined,
         }));
         const r = await askJson<any[]>(`Môn ${e.subject} lớp 5. Với mỗi câu hỏi dưới đây, hãy GIẢI và cho biết:
-- "answer": (mcq) chỉ số đáp án đúng bắt đầu từ 0; (tf) "tfAnswers": [true/false...]; (fill) "blanks": [đáp án từng chỗ trống theo thứ tự]; (short) "accepted": [đáp án]; (essay) "guide": hướng dẫn chấm/đáp án mẫu ngắn gọn có biểu điểm; nếu là bài tính/giải toán có đáp số ngắn thì thêm "keys": [đáp số từng ý a, b, c… theo thứ tự, chỉ ghi số/kết quả, phân số dạng a/b]; bài văn/câu trả lời tự do thì không có keys.
+- "answer": (mcq) CHỮ CÁI đáp án đúng "A"/"B"/"C"/"D" và "answerText": chép nguyên văn nội dung lựa chọn đúng (bắt buộc, để đối chiếu). Giải cẩn thận từng bước trước khi chọn; (tf) "tfAnswers": [true/false...]; (fill) "blanks": [đáp án từng chỗ trống theo thứ tự]; (short) "accepted": [đáp án]; (essay) "guide": hướng dẫn chấm/đáp án mẫu ngắn gọn có biểu điểm; nếu là bài tính/giải toán có đáp số ngắn thì thêm "keys": [đáp số từng ý a, b, c… theo thứ tự, chỉ ghi số/kết quả, phân số dạng a/b]; bài văn/câu trả lời tự do thì không có keys.
 - "explanation": giải thích ngắn gọn cho học sinh lớp 5 (1–3 câu, có phép tính nếu là Toán).
 - "topic": chọn 1 chủ đề phù hợp nhất trong danh sách: ${JSON.stringify(topics)}
 - "level": 1, 2 hoặc 3 theo TT27.
@@ -91,7 +91,10 @@ Câu hỏi: ${JSON.stringify(payload)}`);
           const q = b.find((x) => x.id === a.id);
           if (!q) continue;
           const patch: Partial<Question> = {};
-          if (q.type === 'mcq' && Number.isInteger(+a.answer) && +a.answer >= 0 && (only || (q.answer ?? -1) < 0)) patch.answer = +a.answer;
+          if (q.type === 'mcq' && (only || (q.answer ?? -1) < 0)) {
+            const ai = resolveMcqAnswer(q.options || [], a.answer, a.answerText);
+            if (ai >= 0) patch.answer = ai;
+          }
           if (q.type === 'tf' && Array.isArray(a.tfAnswers)) patch.tfAnswers = a.tfAnswers.map((v: any) => v === true || v === 'true');
           if (q.type === 'fill' && Array.isArray(a.blanks) && (only || missingAnswer(q))) patch.blanks = a.blanks.map(String);
           if (q.type === 'short' && Array.isArray(a.accepted) && (only || missingAnswer(q))) patch.accepted = a.accepted.map(String);

@@ -5,6 +5,7 @@ import type { Exam } from '../types';
 import { Btn, Modal, toast, copyText } from './ui';
 import { useStore } from '../store';
 import { subjectInfo } from '../curriculum';
+import { noKey } from '../grading';
 
 export function examLink(classCode: string, e: Exam) {
   return location.href.split('#')[0].split('?')[0] + `#/lop/${classCode}/de/${e.id}`;
@@ -44,6 +45,7 @@ export function ShareModal({ exam, onClose, saveExam }: { exam: Exam; onClose: (
   return (
     <Modal open onClose={onClose} title="📲 Giao bài cho học sinh">
       <div className="font-black text-lg text-center">{e.title}</div>
+      {e.questions.some(noKey) && <div className="mt-2 rounded-xl bg-rose-50 border-2 border-rose-200 p-2 text-sm font-bold text-rose-700">⚠️ Đề còn {e.questions.filter(noKey).length} câu CHƯA CÓ ĐÁP ÁN – các câu này sẽ không được chấm. Thầy cô mở "Sửa" → "AI giải & điền đáp án" (hoặc chạm chọn đáp án đúng) rồi Lưu trước khi giao.</div>}
       <div className="mt-3">
         <div className="text-xs font-black text-slate-600 mb-1">1. CHỌN LỚP ĐƯỢC LÀM ĐỀ NÀY</div>
         {!classes.length ? <div className="text-sm text-rose-600 font-bold">Thầy cô chưa có lớp – vào tab "Lớp học & Ôn tập" → "Tạo lớp mới".</div> : (

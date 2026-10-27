@@ -1,6 +1,6 @@
 import type { Exam, Question, Review, Submission } from './types';
 import { askJson, cleanQuestions, QUESTION_SCHEMA } from './ai';
-import { gaps, pct, shuffleArr, topicStats, uid } from './grading';
+import { gaps, noKey, pct, shuffleArr, topicStats, uid } from './grading';
 import { plain } from './components/Rich';
 
 export function examMap(exams: Exam[]) {
@@ -14,8 +14,7 @@ export function bankPractice(exams: Exam[], subject: string, topic: string, excl
     if (e.subject !== subject) continue;
     for (const q of e.questions) {
       if (q.topic !== topic || q.type === 'essay') continue;
-      if (q.type === 'mcq' && (q.answer ?? -1) < 0) continue;
-      if (q.type === 'short' && !(q.accepted || []).length) continue;
+      if (noKey(q)) continue;
       if (excludeKeys.includes(e.id + ':' + q.id)) continue;
       if (q.passageId) continue; // câu đọc hiểu cần bài đọc đi kèm
       pool.push({ ...q, id: uid('q') });
@@ -30,7 +29,7 @@ export function wrongQuestions(stat: { wrongQids: string[] }, byId: Record<strin
       const [eid, qid] = k.split(':');
       const ex = byId[eid];
       const q = ex?.questions.find((x) => x.id === qid);
-      return q ? { q, passage: ex.passages.find((p) => p.id === q.passageId) } : null;
+      return q && !noKey(q) ? { q, passage: ex.passages.find((p) => p.id === q.passageId) } : null;
     })
     .filter(Boolean) as { q: Question; passage?: { title: string; content: string } }[];
 }

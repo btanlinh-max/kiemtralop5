@@ -80,7 +80,7 @@ export const QUESTION_SCHEMA = `Mỗi câu hỏi là object:
 {"type": "mcq"|"tf"|"fill"|"match"|"order"|"short"|"essay",
  "prompt": "nội dung câu hỏi (với fill: viết chỗ trống là [[đáp án]] ngay trong câu, nhiều đáp án chấp nhận ngăn bởi |)",
  "options": ["...","...","...","..."] (mcq, không ghi A. B.),
- "answer": số thứ tự đáp án đúng bắt đầu từ 0 (mcq),
+ "answer": "A"|"B"|"C"|"D" – CHỮ CÁI của đáp án đúng (mcq), "answerText": "chép NGUYÊN VĂN nội dung lựa chọn đúng" (mcq, để đối chiếu),
  "statements": ["..."], "tfAnswers": [true,false,...] (tf),
  "pairs": [["vế trái","vế phải"],...] (match, đúng cặp),
  "items": ["bước 1","bước 2",...] (order, đúng thứ tự),
@@ -107,8 +107,7 @@ export function cleanQuestions(arr: any[], fallbackTopic = ''): Question[] {
       };
       if (type === 'mcq') {
         q.options = (x.options || []).map((o: any) => String(o).replace(/^[A-D]\s*[.)]\s*/, ''));
-        const a = typeof x.answer === 'string' ? 'ABCD'.indexOf(x.answer.trim().toUpperCase()[0]) : Number(x.answer);
-        q.answer = Number.isInteger(a) && a >= 0 && a < (q.options || []).length ? a : -1;
+        q.answer = resolveMcqAnswer(q.options || [], x.answer, x.answerText);
         if ((q.options || []).length < 2) return null;
       }
       if (type === 'tf') {
@@ -138,4 +137,28 @@ export function cleanQuestions(arr: any[], fallbackTopic = ''): Question[] {
       return q;
     })
     .filter(Boolean) as Question[];
+}
+
+// Xác định đáp án trắc nghiệm AI trả về một cách an toàn:
+// ưu tiên đối chiếu NỘI DUNG đáp án, rồi đến chữ cái A/B/C/D, cuối cùng mới đến số thứ tự.
+const normOpt = (t: any) => String(t ?? '').toLowerCase().normalize('NFC').replace(/^[a-d]\s*[.)]\s*/i, '').replace(/[{}\s.]/g, '').replace(/,/g, '.');
+export function resolveMcqAnswer(options: string[], answer: any, answerText?: any): number {
+  if (answerText !== undefined && answerText !== null && String(answerText).trim()) {
+    const t = normOpt(answerText);
+    const exact = options.findIndex((o) => normOpt(o) === t);
+    if (exact >= 0) return exact;
+  }
+  if (typeof answer === 'string') {
+    const a = answer.trim();
+    const m = a.match(/^\(?([A-Ha-h])\)?([.):\s]|$)/);
+    if (m) { const i = 'ABCDEFGH'.indexOf(m[1].toUpperCase()); if (i < options.length) return i; }
+    const byText = options.findIndex((o) => normOpt(o) === normOpt(a));
+    if (byText >= 0) return byText;
+    if (/^\d+$/.test(a)) answer = +a; else return -1;
+  }
+  if (typeof answer === 'number' && Number.isInteger(answer)) {
+    if (answer >= 0 && answer < options.length) return answer;
+    if (answer === options.length) return answer - 1; // AI đếm từ 1
+  }
+  return -1;
 }

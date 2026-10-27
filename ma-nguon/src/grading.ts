@@ -39,7 +39,16 @@ export function sameAnswer(given: string, expected: string): boolean {
   });
 }
 
+// Câu tự chấm nhưng giáo viên chưa có đáp án → không tính vào điểm (tránh chấm sai cho học sinh)
+export function noKey(q: Question) {
+  if (q.type === 'mcq') return !Number.isInteger(q.answer) || (q.answer as number) < 0 || (q.answer as number) >= (q.options || []).length;
+  if (q.type === 'fill') return !(q.blanks || []).length || (q.blanks || []).some((b) => !String(b).trim());
+  if (q.type === 'short') return !(q.accepted || []).some((a) => String(a).trim());
+  return false;
+}
+
 export function gradeQuestion(q: Question, ans: any): QResult {
+  if (noKey(q)) return { qid: q.id, earned: 0, max: 0, status: 'pending', comment: 'Câu này chưa có đáp án – không tính điểm.' };
   const max = q.points || 0;
   const r = (earned: number, status: QResult['status']): QResult => ({ qid: q.id, earned: Math.round(earned * 100) / 100, max, status });
   switch (q.type) {
@@ -101,7 +110,7 @@ export function summarize(results: QResult[]) {
   const raw = results.reduce((s, x) => s + x.earned, 0);
   const rawMax = results.reduce((s, x) => s + x.max, 0) || 1;
   const score = Math.round((raw / rawMax) * 100) / 10; // thang 10, 1 chữ số thập phân
-  const pending = results.some((x) => x.status === 'pending');
+  const pending = results.some((x) => x.status === 'pending' && x.max > 0);
   return { results, raw: Math.round(raw * 100) / 100, rawMax, score, pending };
 }
 
