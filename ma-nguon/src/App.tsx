@@ -74,7 +74,9 @@ export default function App() {
       else if (!loading && classExams.length) toast('Đề này chưa mở hoặc không thuộc lớp em.', 'err');
       else return;
     }
+    // Xoá link khỏi thanh địa chỉ VÀ báo cho ứng dụng, để link cũ không tự mở lại đề khi danh sách đề tải lại
     history.replaceState(null, '', location.pathname + location.search);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
   }, [linkClass, linkExam, profile.studentName, profile.classCode, classExams, loading]);
 
   const saveExam = async (e: Exam) => {

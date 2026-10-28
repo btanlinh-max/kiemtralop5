@@ -1,5 +1,5 @@
 // Bộ nhớ đệm đơn giản để web mở được khi mạng yếu
-const C = 'kt5-v5';
+const C = 'kt5-v6';
 self.addEventListener('install', (e) => { self.skipWaiting(); });
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', (e) => {
